@@ -21,14 +21,15 @@ pub fn run() {
         Commands::Screenshot { device, output } => handle_screenshot(&device, &output),
         Commands::Input { device, key } => handle_input(&device, key),
         Commands::Openurl { device, url } => handle_openurl(&device, &url),
-        Commands::Tap { device, x, y } => handle_tap(&device, x, y),
+        Commands::Tap { device, x, y, scale } => handle_tap(&device, x, y, scale),
         Commands::Swipe {
             device,
             start_x,
             start_y,
             end_x,
             end_y,
-        } => handle_swipe(&device, start_x, start_y, end_x, end_y),
+            scale,
+        } => handle_swipe(&device, start_x, start_y, end_x, end_y, scale),
         Commands::Enumerate { device } => handle_enumerate(&device),
     };
 
@@ -129,9 +130,21 @@ fn handle_openurl(device: &str, url: &str) -> Result<(), Box<dyn std::error::Err
     Ok(())
 }
 
-fn handle_tap(device: &str, x: u32, y: u32) -> Result<(), Box<dyn std::error::Error>> {
-    idb::tap(device, f64::from(x), f64::from(y))?;
-    println!("Tapped at ({}, {}) on {}", x, y, device);
+fn handle_tap(device: &str, x: u32, y: u32, scale: Option<u32>) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(scale_factor) = scale {
+        // Pixel coordinates - convert to logical points
+        idb::tap_pixel(device, f64::from(x), f64::from(y), f64::from(scale_factor))?;
+        let point_x = f64::from(x) / f64::from(scale_factor);
+        let point_y = f64::from(y) / f64::from(scale_factor);
+        println!(
+            "Tapped at pixel ({}, {}) -> point ({:.1}, {:.1}) on {} (scale: {}x)",
+            x, y, point_x, point_y, device, scale_factor
+        );
+    } else {
+        // Logical point coordinates
+        idb::tap(device, f64::from(x), f64::from(y))?;
+        println!("Tapped at point ({}, {}) on {}", x, y, device);
+    }
     Ok(())
 }
 
@@ -141,19 +154,38 @@ fn handle_swipe(
     start_y: u32,
     end_x: u32,
     end_y: u32,
+    scale: Option<u32>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    idb::swipe(
-        device,
-        f64::from(start_x),
-        f64::from(start_y),
-        f64::from(end_x),
-        f64::from(end_y),
-        None,
-    )?;
-    println!(
-        "Swiped from ({}, {}) to ({}, {}) on {}",
-        start_x, start_y, end_x, end_y, device
-    );
+    if let Some(scale_factor) = scale {
+        // Pixel coordinates - convert to logical points
+        idb::swipe_pixel(
+            device,
+            f64::from(start_x),
+            f64::from(start_y),
+            f64::from(end_x),
+            f64::from(end_y),
+            f64::from(scale_factor),
+            None,
+        )?;
+        println!(
+            "Swiped from pixel ({}, {}) to ({}, {}) on {} (scale: {}x)",
+            start_x, start_y, end_x, end_y, device, scale_factor
+        );
+    } else {
+        // Logical point coordinates
+        idb::swipe(
+            device,
+            f64::from(start_x),
+            f64::from(start_y),
+            f64::from(end_x),
+            f64::from(end_y),
+            None,
+        )?;
+        println!(
+            "Swiped from point ({}, {}) to ({}, {}) on {}",
+            start_x, start_y, end_x, end_y, device
+        );
+    }
     Ok(())
 }
 
