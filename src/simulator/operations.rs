@@ -188,6 +188,33 @@ pub fn open_url(udid: &str, url: &str) -> Result<()> {
     Ok(())
 }
 
+/// Send a key event to a simulator device
+///
+/// # Arguments
+/// * `udid` - The device UDID (or "booted" for the currently booted device)
+/// * `key` - The key to send (e.g., "return", "escape", "home", or key code)
+///
+/// # Supported Keys
+/// - Hardware keys: "home", "lock", "shake"
+/// - Special keys: "return", "escape", "tab", "delete"
+/// - Arrow keys: "up", "down", "left", "right"
+/// - Key codes: numeric values like "36" for Return
+pub fn send_key(udid: &str, key: &str) -> Result<()> {
+    run_simctl(&["io", udid, "sendkey", key])?;
+    Ok(())
+}
+
+/// Enumerate I/O devices available on a simulator
+///
+/// # Arguments
+/// * `udid` - The device UDID (or "booted" for the currently booted device)
+///
+/// # Returns
+/// Raw output from simctl io enumerate command
+pub fn enumerate_devices(udid: &str) -> Result<String> {
+    run_simctl(&["io", udid, "enumerate"])
+}
+
 /// Get the booted device UDID, if any
 pub fn get_booted_device() -> Result<Option<DeviceInfo>> {
     let devices = list_devices()?;
