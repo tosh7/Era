@@ -133,6 +133,20 @@ pub fn press_button(udid: &str, button: &str) -> Result<()> {
     Ok(())
 }
 
+/// Send a key event to a simulator device
+///
+/// # Arguments
+/// * `udid` - The device UDID
+/// * `key` - The key code or key name to send
+///
+/// # Supported Keys
+/// Key codes (integers) or special key names supported by IDB.
+/// Use `press_button` for hardware buttons like HOME, LOCK.
+pub fn send_key(udid: &str, key: &str) -> Result<()> {
+    run_idb(&["ui", "key", "--udid", udid, key])?;
+    Ok(())
+}
+
 /// Long press on a specific coordinate
 ///
 /// # Arguments

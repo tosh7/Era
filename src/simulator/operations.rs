@@ -190,18 +190,24 @@ pub fn open_url(udid: &str, url: &str) -> Result<()> {
 
 /// Send a key event to a simulator device
 ///
-/// # Arguments
-/// * `udid` - The device UDID (or "booted" for the currently booted device)
-/// * `key` - The key to send (e.g., "return", "escape", "home", or key code)
+/// **DEPRECATED**: This function requires IDB (iOS Development Bridge).
+/// Use `crate::simulator::idb::send_key` or `crate::simulator::idb::press_button` instead.
 ///
-/// # Supported Keys
-/// - Hardware keys: "home", "lock", "shake"
-/// - Special keys: "return", "escape", "tab", "delete"
-/// - Arrow keys: "up", "down", "left", "right"
-/// - Key codes: numeric values like "36" for Return
-pub fn send_key(udid: &str, key: &str) -> Result<()> {
-    run_simctl(&["io", udid, "sendkey", key])?;
-    Ok(())
+/// simctl does not support key input directly. Install IDB with:
+/// `brew install idb-companion`
+///
+/// # Arguments
+/// * `_udid` - The device UDID (unused, for API compatibility)
+/// * `_key` - The key to send (unused, for API compatibility)
+#[deprecated(
+    since = "0.1.0",
+    note = "simctl does not support key input. Use idb::send_key or idb::press_button instead."
+)]
+pub fn send_key(_udid: &str, _key: &str) -> Result<()> {
+    Err(SimulatorError::CommandFailed {
+        status: 1,
+        stderr: "Key input requires IDB. Install with: brew install idb-companion. Use idb::send_key or idb::press_button instead.".to_string(),
+    })
 }
 
 /// Enumerate I/O devices available on a simulator
