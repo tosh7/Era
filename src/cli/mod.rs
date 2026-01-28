@@ -37,5 +37,25 @@ pub fn run() {
             println!("Taking screenshot of {} to {}", device, output);
             // TODO: Call simulator::operations::screenshot()
         }
+        Commands::Input { device, key } => {
+            println!("Sending {:?} key to {}", key, device);
+            // TODO: Call simulator::operations::input()
+        }
+        Commands::Openurl { device, url } => {
+            println!("Opening URL {} on {}", url, device);
+            // TODO: Call simulator::operations::openurl()
+        }
+        Commands::Tap { device, x, y } => {
+            println!("Tapping at ({}, {}) on {}", x, y, device);
+            // TODO: Call simulator::operations::tap()
+        }
+        Commands::Swipe { device, start_x, start_y, end_x, end_y } => {
+            println!("Swiping from ({}, {}) to ({}, {}) on {}", start_x, start_y, end_x, end_y, device);
+            // TODO: Call simulator::operations::swipe()
+        }
+        Commands::Enumerate { device } => {
+            println!("Enumerating input devices on {}", device);
+            // TODO: Call simulator::operations::enumerate()
+        }
     }
 }
