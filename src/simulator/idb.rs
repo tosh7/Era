@@ -55,16 +55,19 @@ pub mod scale {
     pub const SCALE_3X: f64 = 3.0;
 }
 
-/// Convert pixel coordinates to logical points
+/// Convert pixel coordinates to logical points (rounded to integer)
 ///
 /// # Arguments
 /// * `pixel` - Coordinate in pixels (from screenshot)
 /// * `scale_factor` - Device scale factor (2.0 for 2x, 3.0 for 3x Retina displays)
 ///
 /// # Returns
-/// Coordinate in logical points (for IDB)
-pub fn pixel_to_point(pixel: f64, scale_factor: f64) -> f64 {
-    pixel / scale_factor
+/// Coordinate in logical points as integer (for IDB)
+///
+/// # Note
+/// IDB requires integer coordinates. This function rounds to nearest integer.
+pub fn pixel_to_point(pixel: f64, scale_factor: f64) -> i64 {
+    (pixel / scale_factor).round() as i64
 }
 
 /// Tap on a specific coordinate on the simulator screen
@@ -75,8 +78,8 @@ pub fn pixel_to_point(pixel: f64, scale_factor: f64) -> f64 {
 /// * `y` - Y coordinate (in logical points, NOT pixels)
 ///
 /// # Note
-/// IDB uses logical points, not pixels. For coordinates from screenshots,
-/// use `tap_pixel` or divide by the device's scale factor (2x or 3x).
+/// IDB uses logical points, not pixels. Coordinates are rounded to integers.
+/// For coordinates from screenshots, use `tap_pixel` with scale factor.
 pub fn tap(udid: &str, x: f64, y: f64) -> Result<()> {
     if x < 0.0 || y < 0.0 {
         return Err(IdbError::InvalidCoordinates(format!(
@@ -85,13 +88,17 @@ pub fn tap(udid: &str, x: f64, y: f64) -> Result<()> {
         )));
     }
 
+    // IDB requires integer coordinates
+    let x_int = x.round() as i64;
+    let y_int = y.round() as i64;
+
     run_idb(&[
         "ui",
         "tap",
         "--udid",
         udid,
-        &x.to_string(),
-        &y.to_string(),
+        &x_int.to_string(),
+        &y_int.to_string(),
     ])?;
     Ok(())
 }
@@ -111,8 +118,8 @@ pub fn tap(udid: &str, x: f64, y: f64) -> Result<()> {
 /// tap_pixel(udid, 630.0, 1368.0, 3.0)?;
 /// ```
 pub fn tap_pixel(udid: &str, pixel_x: f64, pixel_y: f64, scale_factor: f64) -> Result<()> {
-    let x = pixel_to_point(pixel_x, scale_factor);
-    let y = pixel_to_point(pixel_y, scale_factor);
+    let x = pixel_to_point(pixel_x, scale_factor) as f64;
+    let y = pixel_to_point(pixel_y, scale_factor) as f64;
     tap(udid, x, y)
 }
 
@@ -127,8 +134,8 @@ pub fn tap_pixel(udid: &str, pixel_x: f64, pixel_y: f64, scale_factor: f64) -> R
 /// * `duration` - Optional duration in seconds (default: 0.5)
 ///
 /// # Note
-/// IDB uses logical points, not pixels. For coordinates from screenshots,
-/// use `swipe_pixel` or divide by the device's scale factor (2x or 3x).
+/// IDB uses logical points, not pixels. Coordinates are rounded to integers.
+/// For coordinates from screenshots, use `swipe_pixel` with scale factor.
 pub fn swipe(
     udid: &str,
     start_x: f64,
@@ -144,6 +151,12 @@ pub fn swipe(
         )));
     }
 
+    // IDB requires integer coordinates
+    let start_x_int = start_x.round() as i64;
+    let start_y_int = start_y.round() as i64;
+    let end_x_int = end_x.round() as i64;
+    let end_y_int = end_y.round() as i64;
+
     let duration_str = duration.unwrap_or(0.5).to_string();
 
     run_idb(&[
@@ -151,10 +164,10 @@ pub fn swipe(
         "swipe",
         "--udid",
         udid,
-        &start_x.to_string(),
-        &start_y.to_string(),
-        &end_x.to_string(),
-        &end_y.to_string(),
+        &start_x_int.to_string(),
+        &start_y_int.to_string(),
+        &end_x_int.to_string(),
+        &end_y_int.to_string(),
         "--duration",
         &duration_str,
     ])?;
@@ -180,10 +193,10 @@ pub fn swipe_pixel(
     scale_factor: f64,
     duration: Option<f64>,
 ) -> Result<()> {
-    let start_x = pixel_to_point(start_pixel_x, scale_factor);
-    let start_y = pixel_to_point(start_pixel_y, scale_factor);
-    let end_x = pixel_to_point(end_pixel_x, scale_factor);
-    let end_y = pixel_to_point(end_pixel_y, scale_factor);
+    let start_x = pixel_to_point(start_pixel_x, scale_factor) as f64;
+    let start_y = pixel_to_point(start_pixel_y, scale_factor) as f64;
+    let end_x = pixel_to_point(end_pixel_x, scale_factor) as f64;
+    let end_y = pixel_to_point(end_pixel_y, scale_factor) as f64;
     swipe(udid, start_x, start_y, end_x, end_y, duration)
 }
 
@@ -225,8 +238,8 @@ pub fn send_key(udid: &str, key: &str) -> Result<()> {
 ///
 /// # Arguments
 /// * `udid` - The device UDID
-/// * `x` - X coordinate
-/// * `y` - Y coordinate
+/// * `x` - X coordinate (in logical points)
+/// * `y` - Y coordinate (in logical points)
 /// * `duration` - Press duration in seconds
 pub fn long_press(udid: &str, x: f64, y: f64, duration: f64) -> Result<()> {
     if x < 0.0 || y < 0.0 {
@@ -236,6 +249,10 @@ pub fn long_press(udid: &str, x: f64, y: f64, duration: f64) -> Result<()> {
         )));
     }
 
+    // IDB requires integer coordinates
+    let x_int = x.round() as i64;
+    let y_int = y.round() as i64;
+
     run_idb(&[
         "ui",
         "tap",
@@ -243,8 +260,8 @@ pub fn long_press(udid: &str, x: f64, y: f64, duration: f64) -> Result<()> {
         udid,
         "--duration",
         &duration.to_string(),
-        &x.to_string(),
-        &y.to_string(),
+        &x_int.to_string(),
+        &y_int.to_string(),
     ])?;
     Ok(())
 }
@@ -272,13 +289,19 @@ mod tests {
     #[test]
     fn test_pixel_to_point_conversion() {
         // iPhone Pro 3x scale: 1260 pixels -> 420 points
-        assert_eq!(pixel_to_point(1260.0, 3.0), 420.0);
-        assert_eq!(pixel_to_point(2736.0, 3.0), 912.0);
+        assert_eq!(pixel_to_point(1260.0, 3.0), 420);
+        assert_eq!(pixel_to_point(2736.0, 3.0), 912);
 
         // iPhone SE 2x scale: 750 pixels -> 375 points
-        assert_eq!(pixel_to_point(750.0, 2.0), 375.0);
+        assert_eq!(pixel_to_point(750.0, 2.0), 375);
 
         // 1x scale (no conversion)
-        assert_eq!(pixel_to_point(100.0, 1.0), 100.0);
+        assert_eq!(pixel_to_point(100.0, 1.0), 100);
+
+        // Test rounding: 455 / 3 = 151.666... -> 152
+        assert_eq!(pixel_to_point(455.0, 3.0), 152);
+
+        // Test rounding: 454 / 3 = 151.333... -> 151
+        assert_eq!(pixel_to_point(454.0, 3.0), 151);
     }
 }
