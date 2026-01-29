@@ -29,8 +29,8 @@ cargo install era
 | `screenshot` | Take a screenshot of a simulator |
 | `input` | Send keyboard input to a simulator |
 | `openurl` | Open a URL in the simulator |
-| `tap` | Tap on the simulator screen |
-| `swipe` | Swipe on the simulator screen |
+| `tap` | Tap on the simulator screen (supports `--scale` for pixel coordinates) |
+| `swipe` | Swipe on the simulator screen (supports `--scale` for pixel coordinates) |
 | `enumerate` | Enumerate available input devices |
 
 ## Usage Examples
@@ -101,12 +101,31 @@ era openurl -d "iPhone 16 Pro" -u "myapp://settings"
 ### Touch Automation
 
 ```bash
-# Tap at coordinates
+# Tap at coordinates (in points)
 era tap -d "iPhone 16 Pro" -x 200 -y 400
 
-# Swipe gesture
+# Tap with pixel coordinates using --scale option
+# Use --scale to convert pixel coordinates to points
+# Example: 1260px / 3 (scale factor) = 420 points
+era tap -d booted -x 1260 -y 2736 --scale 3
+
+# Swipe gesture (in points)
 era swipe -d "iPhone 16 Pro" --start-x 100 --start-y 500 --end-x 100 --end-y 200
+
+# Swipe with pixel coordinates
+era swipe -d booted --start-x 300 --start-y 1500 --end-x 300 --end-y 600 --scale 3
 ```
+
+#### Coordinate Conversion
+
+The `--scale` option enables automatic pixel-to-point conversion for tap and swipe commands. This is useful when working with coordinates obtained from screenshot tools or UI inspection tools that report pixel values.
+
+| Device | Scale Factor |
+|--------|--------------|
+| Standard displays (iPhone SE, etc.) | 2 |
+| Super Retina displays (iPhone 16 Pro, etc.) | 3 |
+
+Formula: `point = pixel / scale`
 
 ### Device Enumeration
 
