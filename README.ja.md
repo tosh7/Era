@@ -127,10 +127,15 @@ era openurl -d booted -u "myapp://deeplink"
 指定した座標をタップします（IDB必要）。
 
 ```bash
-era tap -d <DEVICE_ID> -x <X座標> -y <Y座標>
+era tap -d <DEVICE_ID> -x <X座標> -y <Y座標> [--scale <スケール係数>]
 
-# 例
+# 例（ポイント座標）
 era tap -d booted -x 200 -y 400
+
+# 例（ピクセル座標を使用する場合）
+# --scale オプションでピクセルからポイントへ自動変換
+# 例: 1260px / 3 (スケール係数) = 420 ポイント
+era tap -d booted -x 1260 -y 2736 --scale 3
 ```
 
 ### swipe - スワイプ操作
@@ -138,11 +143,25 @@ era tap -d booted -x 200 -y 400
 指定した座標間をスワイプします（IDB必要）。
 
 ```bash
-era swipe -d <DEVICE_ID> --start-x <X1> --start-y <Y1> --end-x <X2> --end-y <Y2>
+era swipe -d <DEVICE_ID> --start-x <X1> --start-y <Y1> --end-x <X2> --end-y <Y2> [--scale <スケール係数>]
 
-# 例（上にスワイプ）
+# 例（上にスワイプ、ポイント座標）
 era swipe -d booted --start-x 200 --start-y 600 --end-x 200 --end-y 200
+
+# 例（ピクセル座標を使用する場合）
+era swipe -d booted --start-x 300 --start-y 1500 --end-x 300 --end-y 600 --scale 3
 ```
+
+### 座標変換について
+
+`--scale` オプションを使用すると、ピクセル座標からポイント座標への自動変換が行われます。スクリーンショットツールやUI検査ツールから取得したピクセル値を直接使用できます。
+
+| デバイス | スケール係数 |
+|---------|-------------|
+| 標準ディスプレイ（iPhone SE等） | 2 |
+| Super Retinaディスプレイ（iPhone 16 Pro等） | 3 |
+
+計算式: `ポイント = ピクセル / スケール係数`
 
 ### enumerate - 入力デバイスの列挙
 
