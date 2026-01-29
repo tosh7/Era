@@ -192,8 +192,3 @@ brew install idb-companion
 
 IDBがインストールされていない場合でも、`list`、`boot`、`shutdown`、`install`、`launch`、`screenshot`、`input`、`openurl`、`enumerate`コマンドは通常通り使用できます。
 
-## ライセンス
-
-MIT License
-
-Copyright (c) 2026 Era Contributors
