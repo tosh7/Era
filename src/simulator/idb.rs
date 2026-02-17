@@ -321,17 +321,17 @@ pub fn describe_all(udid: &str) -> Result<String> {
 /// Compute a lightweight hash of the given string data
 ///
 /// Uses `DefaultHasher` to avoid adding external crate dependencies.
-fn compute_state_hash(data: &str) -> u64 {
+pub fn compute_state_hash(data: &str) -> u64 {
     let mut hasher = DefaultHasher::new();
     data.hash(&mut hasher);
     hasher.finish()
 }
 
 /// Fixed jitter offsets for retry attempts (x_offset, y_offset)
-const JITTER_OFFSETS: [(f64, f64); 3] = [(3.0, 0.0), (0.0, 3.0), (-3.0, -3.0)];
+pub const JITTER_OFFSETS: [(f64, f64); 3] = [(3.0, 0.0), (0.0, 3.0), (-3.0, -3.0)];
 
 /// Maximum number of retry attempts when tap doesn't cause UI change
-const MAX_RETRIES: usize = 3;
+pub const MAX_RETRIES: usize = 3;
 
 /// Tap with automatic retry if the UI state doesn't change
 ///
@@ -476,6 +476,63 @@ pub fn tap_with_retry(udid: &str, x: f64, y: f64, config: &CaptureConfig) -> Res
     Ok(())
 }
 
+/// Deterministic jitter offset as fraction of region dimensions (within ±10%)
+const REGION_JITTER: (f64, f64) = (0.05, -0.03);
+
+/// Tap within a rectangular region on the simulator screen
+///
+/// Computes the center of the region and applies a small deterministic jitter
+/// (within 10% of region dimensions) to simulate more natural tap behavior.
+/// The tap point is clamped to stay within the region bounds.
+///
+/// # Arguments
+/// * `udid` - The device UDID
+/// * `x` - Left edge X coordinate (in logical points)
+/// * `y` - Top edge Y coordinate (in logical points)
+/// * `width` - Region width (in logical points)
+/// * `height` - Region height (in logical points)
+/// * `no_retry` - If true, perform a single tap; if false, use tap_with_retry
+/// * `config` - Capture configuration for screenshot observation
+pub fn tap_region(
+    udid: &str,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    no_retry: bool,
+    config: &CaptureConfig,
+) -> Result<()> {
+    if x < 0.0 || y < 0.0 || width <= 0.0 || height <= 0.0 {
+        return Err(IdbError::InvalidCoordinates(format!(
+            "Region must have non-negative origin and positive dimensions: ({}, {}, {}x{})",
+            x, y, width, height
+        )));
+    }
+
+    // Compute center of region
+    let center_x = x + width / 2.0;
+    let center_y = y + height / 2.0;
+
+    // Apply deterministic jitter within 10% of region dimensions
+    let jitter_x = width * REGION_JITTER.0;
+    let jitter_y = height * REGION_JITTER.1;
+
+    // Clamp to region bounds
+    let tap_x = (center_x + jitter_x).clamp(x, x + width);
+    let tap_y = (center_y + jitter_y).clamp(y, y + height);
+
+    eprintln!(
+        "[tap_region] Region ({}, {}, {}x{}), center ({}, {}), jittered tap at ({:.1}, {:.1})",
+        x, y, width, height, center_x, center_y, tap_x, tap_y
+    );
+
+    if no_retry {
+        tap(udid, tap_x, tap_y)
+    } else {
+        tap_with_retry(udid, tap_x, tap_y, config)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -532,5 +589,69 @@ mod tests {
     #[test]
     fn test_jitter_offsets_count() {
         assert_eq!(JITTER_OFFSETS.len(), MAX_RETRIES);
+    }
+
+    #[test]
+    fn test_region_center_calculation() {
+        let x = 100.0;
+        let y = 200.0;
+        let width = 50.0;
+        let height = 40.0;
+
+        let center_x = x + width / 2.0;
+        let center_y = y + height / 2.0;
+        assert_eq!(center_x, 125.0);
+        assert_eq!(center_y, 220.0);
+
+        // Jittered point should stay within region
+        let jitter_x = width * REGION_JITTER.0;
+        let jitter_y = height * REGION_JITTER.1;
+        let tap_x = (center_x + jitter_x).clamp(x, x + width);
+        let tap_y = (center_y + jitter_y).clamp(y, y + height);
+
+        assert!(tap_x >= x && tap_x <= x + width);
+        assert!(tap_y >= y && tap_y <= y + height);
+    }
+
+    #[test]
+    fn test_region_jitter_within_bounds() {
+        // Even with various region sizes, jitter should stay within bounds
+        for &(w, h) in &[(1.0, 1.0), (1000.0, 1000.0), (10.0, 5.0)] {
+            let x = 0.0;
+            let y = 0.0;
+            let center_x = x + w / 2.0;
+            let center_y = y + h / 2.0;
+            let jitter_x = w * REGION_JITTER.0;
+            let jitter_y = h * REGION_JITTER.1;
+            let tap_x = (center_x + jitter_x).clamp(x, x + w);
+            let tap_y = (center_y + jitter_y).clamp(y, y + h);
+
+            assert!(tap_x >= x && tap_x <= x + w, "x out of bounds for {}x{}", w, h);
+            assert!(tap_y >= y && tap_y <= y + h, "y out of bounds for {}x{}", w, h);
+        }
+    }
+
+    #[test]
+    fn test_region_invalid_dimensions() {
+        let config = CaptureConfig::new(ObservationPolicy::Never, false, String::new());
+
+        // Negative origin
+        let result = tap_region("fake-udid", -1.0, 0.0, 10.0, 10.0, true, &config);
+        assert!(matches!(result, Err(IdbError::InvalidCoordinates(_))));
+
+        // Zero width
+        let result = tap_region("fake-udid", 0.0, 0.0, 0.0, 10.0, true, &config);
+        assert!(matches!(result, Err(IdbError::InvalidCoordinates(_))));
+
+        // Negative height
+        let result = tap_region("fake-udid", 0.0, 0.0, 10.0, -5.0, true, &config);
+        assert!(matches!(result, Err(IdbError::InvalidCoordinates(_))));
+    }
+
+    #[test]
+    fn test_region_jitter_is_within_10_percent() {
+        // REGION_JITTER offsets should each be within ±10% (0.1)
+        assert!(REGION_JITTER.0.abs() <= 0.1);
+        assert!(REGION_JITTER.1.abs() <= 0.1);
     }
 }
