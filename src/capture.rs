@@ -145,9 +145,14 @@ mod tests {
     }
 
     #[test]
-    fn test_observation_policy_variants() {
-        let _ = ObservationPolicy::Always;
-        let _ = ObservationPolicy::OnFailure;
-        let _ = ObservationPolicy::Never;
+    fn test_observation_policy_parse() {
+        use clap::ValueEnum;
+        let always = ObservationPolicy::from_str("always", true).unwrap();
+        assert_eq!(always, ObservationPolicy::Always);
+        let on_failure = ObservationPolicy::from_str("on-failure", true).unwrap();
+        assert_eq!(on_failure, ObservationPolicy::OnFailure);
+        let never = ObservationPolicy::from_str("never", true).unwrap();
+        assert_eq!(never, ObservationPolicy::Never);
+        assert!(ObservationPolicy::from_str("invalid", true).is_err());
     }
 }
