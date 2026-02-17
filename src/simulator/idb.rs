@@ -1,7 +1,13 @@
 // IDB (iOS Development Bridge) integration - Facebook's idb tool wrapper
 // IDB is an optional dependency for advanced UI automation features
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::process::Command;
+use std::thread;
+use std::time::Duration;
 use thiserror::Error;
+
+use crate::capture::{self, CaptureConfig, ObservationPolicy};
 
 /// Errors that can occur during IDB operations
 #[derive(Debug, Error)]
@@ -88,7 +94,17 @@ pub fn tap(udid: &str, x: f64, y: f64) -> Result<()> {
         )));
     }
 
-    // IDB requires integer coordinates
+    let info = super::orientation::detect_orientation(udid);
+    let (tx, ty) = super::orientation::transform_coordinates(
+        x, y, info.screen_width, info.screen_height, info.orientation,
+    );
+
+    tap_raw(udid, tx, ty)
+}
+
+/// Internal tap that sends already-transformed coordinates to idb.
+/// Skips orientation detection — caller is responsible for transformation.
+fn tap_raw(udid: &str, x: f64, y: f64) -> Result<()> {
     let x_int = x.round() as i64;
     let y_int = y.round() as i64;
 
@@ -151,7 +167,27 @@ pub fn swipe(
         )));
     }
 
-    // IDB requires integer coordinates
+    let info = super::orientation::detect_orientation(udid);
+    let (tx_start, ty_start) = super::orientation::transform_coordinates(
+        start_x, start_y, info.screen_width, info.screen_height, info.orientation,
+    );
+    let (tx_end, ty_end) = super::orientation::transform_coordinates(
+        end_x, end_y, info.screen_width, info.screen_height, info.orientation,
+    );
+
+    swipe_raw(udid, tx_start, ty_start, tx_end, ty_end, duration)
+}
+
+/// Internal swipe that sends already-transformed coordinates to idb.
+/// Skips orientation detection — caller is responsible for transformation.
+fn swipe_raw(
+    udid: &str,
+    start_x: f64,
+    start_y: f64,
+    end_x: f64,
+    end_y: f64,
+    duration: Option<f64>,
+) -> Result<()> {
     let start_x_int = start_x.round() as i64;
     let start_y_int = start_y.round() as i64;
     let end_x_int = end_x.round() as i64;
@@ -249,9 +285,14 @@ pub fn long_press(udid: &str, x: f64, y: f64, duration: f64) -> Result<()> {
         )));
     }
 
-    // IDB requires integer coordinates
-    let x_int = x.round() as i64;
-    let y_int = y.round() as i64;
+    // Apply orientation-based coordinate transformation
+    let info = super::orientation::detect_orientation(udid);
+    let (tx, ty) = super::orientation::transform_coordinates(
+        x, y, info.screen_width, info.screen_height, info.orientation,
+    );
+
+    let x_int = tx.round() as i64;
+    let y_int = ty.round() as i64;
 
     run_idb(&[
         "ui",
@@ -263,6 +304,169 @@ pub fn long_press(udid: &str, x: f64, y: f64, duration: f64) -> Result<()> {
         &x_int.to_string(),
         &y_int.to_string(),
     ])?;
+    Ok(())
+}
+
+/// Retrieve the UI element tree from the simulator using `idb ui describe-all`
+///
+/// # Arguments
+/// * `udid` - The device UDID
+///
+/// # Returns
+/// JSON string of the UI element tree
+pub fn describe_all(udid: &str) -> Result<String> {
+    run_idb(&["ui", "describe-all", "--udid", udid])
+}
+
+/// Compute a lightweight hash of the given string data
+///
+/// Uses `DefaultHasher` to avoid adding external crate dependencies.
+fn compute_state_hash(data: &str) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    data.hash(&mut hasher);
+    hasher.finish()
+}
+
+/// Fixed jitter offsets for retry attempts (x_offset, y_offset)
+const JITTER_OFFSETS: [(f64, f64); 3] = [(3.0, 0.0), (0.0, 3.0), (-3.0, -3.0)];
+
+/// Maximum number of retry attempts when tap doesn't cause UI change
+const MAX_RETRIES: usize = 3;
+
+/// Tap with automatic retry if the UI state doesn't change
+///
+/// Compares UI state (via `idb ui describe-all`) before and after the tap.
+/// If no change is detected, retries with small coordinate jitter.
+/// Screenshots are captured based on the observation policy in `config`.
+///
+/// # Arguments
+/// * `udid` - The device UDID
+/// * `x` - X coordinate (in logical points)
+/// * `y` - Y coordinate (in logical points)
+/// * `config` - Capture configuration controlling screenshot observation
+pub fn tap_with_retry(udid: &str, x: f64, y: f64, config: &CaptureConfig) -> Result<()> {
+    if x < 0.0 || y < 0.0 {
+        return Err(IdbError::InvalidCoordinates(format!(
+            "Coordinates must be non-negative: ({}, {})",
+            x, y
+        )));
+    }
+
+    // Detect orientation once and reuse for all attempts
+    let info = super::orientation::detect_orientation(udid);
+    let (tx, ty) = super::orientation::transform_coordinates(
+        x, y, info.screen_width, info.screen_height, info.orientation,
+    );
+
+    // Capture pre-tap screenshot (Always policy only)
+    if config.policy == ObservationPolicy::Always {
+        capture::observe(udid, config, "pre");
+    }
+
+    // Get pre-tap UI state hash
+    let pre_hash = match describe_all(udid) {
+        Ok(output) => Some(compute_state_hash(&output)),
+        Err(e) => {
+            eprintln!(
+                "[tap_with_retry] Warning: failed to get pre-tap UI state: {}. Falling back to simple tap.",
+                e
+            );
+            return tap_raw(udid, tx, ty);
+        }
+    };
+
+    // First tap attempt at transformed coordinates
+    eprintln!(
+        "[tap_with_retry] Attempt 1/{}: tap at ({}, {})",
+        MAX_RETRIES + 1,
+        x,
+        y
+    );
+    tap_raw(udid, tx, ty)?;
+
+    // Brief pause for UI to settle
+    thread::sleep(Duration::from_millis(300));
+
+    // Get post-tap UI state hash
+    let post_hash = match describe_all(udid) {
+        Ok(output) => compute_state_hash(&output),
+        Err(e) => {
+            eprintln!(
+                "[tap_with_retry] Warning: failed to get post-tap UI state: {}. Assuming success.",
+                e
+            );
+            return Ok(());
+        }
+    };
+
+    if pre_hash != Some(post_hash) {
+        eprintln!("[tap_with_retry] UI state changed after attempt 1. Success.");
+        return Ok(());
+    }
+
+    eprintln!("[tap_with_retry] UI state unchanged after attempt 1. Retrying with jitter...");
+
+    // Capture screenshot on failure (OnFailure or Always)
+    if config.policy != ObservationPolicy::Never {
+        capture::observe(udid, config, "fail_1");
+    }
+
+    // Retry with jitter offsets (applied to already-transformed coordinates)
+    let mut last_hash = post_hash;
+    for (i, (dx, dy)) in JITTER_OFFSETS.iter().enumerate() {
+        let jittered_x = (tx + dx).max(0.0);
+        let jittered_y = (ty + dy).max(0.0);
+
+        eprintln!(
+            "[tap_with_retry] Attempt {}/{}: tap at ({}, {}) [jitter: ({:+}, {:+})]",
+            i + 2,
+            MAX_RETRIES + 1,
+            jittered_x,
+            jittered_y,
+            dx,
+            dy
+        );
+
+        tap_raw(udid, jittered_x, jittered_y)?;
+        thread::sleep(Duration::from_millis(300));
+
+        match describe_all(udid) {
+            Ok(output) => {
+                let new_hash = compute_state_hash(&output);
+                if new_hash != last_hash {
+                    eprintln!(
+                        "[tap_with_retry] UI state changed after attempt {}. Success.",
+                        i + 2
+                    );
+                    return Ok(());
+                }
+                last_hash = new_hash;
+            }
+            Err(e) => {
+                eprintln!(
+                    "[tap_with_retry] Warning: failed to get UI state on retry {}: {}. Assuming success.",
+                    i + 2,
+                    e
+                );
+                return Ok(());
+            }
+        }
+
+        eprintln!(
+            "[tap_with_retry] UI state unchanged after attempt {}.",
+            i + 2
+        );
+
+        // Capture screenshot on each failed retry (OnFailure or Always)
+        if config.policy != ObservationPolicy::Never {
+            capture::observe(udid, config, &format!("fail_{}", i + 2));
+        }
+    }
+
+    eprintln!(
+        "[tap_with_retry] All {} attempts exhausted. UI state did not change.",
+        MAX_RETRIES + 1
+    );
     Ok(())
 }
 
@@ -303,5 +507,24 @@ mod tests {
 
         // Test rounding: 454 / 3 = 151.333... -> 151
         assert_eq!(pixel_to_point(454.0, 3.0), 151);
+    }
+
+    #[test]
+    fn test_compute_state_hash_deterministic() {
+        let hash1 = compute_state_hash("hello world");
+        let hash2 = compute_state_hash("hello world");
+        assert_eq!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_compute_state_hash_different_inputs() {
+        let hash1 = compute_state_hash("state A");
+        let hash2 = compute_state_hash("state B");
+        assert_ne!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_jitter_offsets_count() {
+        assert_eq!(JITTER_OFFSETS.len(), MAX_RETRIES);
     }
 }
