@@ -51,6 +51,33 @@ fn test_3x_iphone_plus_models() {
 }
 
 #[test]
+fn test_3x_iphone_air_models() {
+    assert_eq!(
+        DeviceScaleFactor::from_device_name("iPhone Air"),
+        DeviceScaleFactor::X3,
+        "iPhone Air should be 3x (1260x2736 px)"
+    );
+}
+
+#[test]
+fn test_2x_ipad_air_not_misclassified() {
+    // iPad Air contains "air" but is NOT an iPhone — should remain 2x
+    let models = [
+        "iPad Air (5th generation)",
+        "iPad Air (4th generation)",
+        "iPad Air (M2)",
+    ];
+    for model in &models {
+        assert_eq!(
+            DeviceScaleFactor::from_device_name(model),
+            DeviceScaleFactor::X2,
+            "{} should be 2x (iPad Air is not 3x)",
+            model
+        );
+    }
+}
+
+#[test]
 fn test_3x_iphone_x_series() {
     // iPhone X and XS are 3x
     assert_eq!(
