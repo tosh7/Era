@@ -137,6 +137,50 @@ pub enum Commands {
         observe: ObservationPolicy,
     },
 
+    /// Tap within a rectangular region on the simulator screen (requires IDB)
+    ///
+    /// Taps near the center of the specified region with small jitter.
+    /// Coordinates are in logical points by default.
+    /// Use --scale to convert pixel coordinates from screenshots.
+    #[command(name = "tap-region")]
+    TapRegion {
+        /// Simulator device ID or name
+        #[arg(short, long, required = true)]
+        device: String,
+
+        /// Left edge X coordinate (pixels if --scale is set, otherwise logical points)
+        #[arg(short = 'x', long, required = true)]
+        x: u32,
+
+        /// Top edge Y coordinate (pixels if --scale is set, otherwise logical points)
+        #[arg(short = 'y', long, required = true)]
+        y: u32,
+
+        /// Region width (pixels if --scale is set, otherwise logical points)
+        #[arg(short = 'W', long, required = true)]
+        width: u32,
+
+        /// Region height (pixels if --scale is set, otherwise logical points)
+        #[arg(short = 'H', long, required = true)]
+        height: u32,
+
+        /// Scale factor to convert pixel coordinates to logical points.
+        /// Use 2 for 2x Retina (iPhone SE), 3 for 3x Retina (iPhone Pro).
+        /// When set, all coordinates are treated as pixel values from screenshots.
+        #[arg(short, long)]
+        scale: Option<u32>,
+
+        /// Disable automatic retry with UI state verification.
+        /// When set, performs a single tap without checking if the UI changed.
+        #[arg(long)]
+        no_retry: bool,
+
+        /// Screenshot observation policy for retry diagnostics.
+        /// Requires --debug-capture to save screenshots to disk.
+        #[arg(long, value_enum, default_value = "on-failure")]
+        observe: ObservationPolicy,
+    },
+
     /// Swipe on the simulator screen (requires IDB)
     ///
     /// Coordinates are in logical points by default.

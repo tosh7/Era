@@ -72,6 +72,19 @@ pub fn run() {
             let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
             handle_tap(&device, x, y, scale, no_retry, &config)
         }
+        Commands::TapRegion {
+            device,
+            x,
+            y,
+            width,
+            height,
+            scale,
+            no_retry,
+            observe,
+        } => {
+            let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
+            handle_tap_region(&device, x, y, width, height, scale, no_retry, &config)
+        }
         Commands::Swipe {
             device,
             start_x,
@@ -220,6 +233,66 @@ fn handle_tap(device: &str, x: u32, y: u32, scale: Option<u32>, no_retry: bool, 
         println!(
             "Tapped at point ({}, {}) on {}{}",
             x, y, device,
+            if no_retry { "" } else { " (retry enabled)" }
+        );
+    }
+    Ok(())
+}
+
+fn handle_tap_region(
+    device: &str,
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
+    scale: Option<u32>,
+    no_retry: bool,
+    config: &CaptureConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let effective_scale = resolve_scale(device, scale);
+
+    // Convert all region coordinates to logical points
+    let (pt_x, pt_y, pt_w, pt_h) = if let Some(scale_factor) = effective_scale {
+        let sf = f64::from(scale_factor);
+        let px = f64::from(x) / sf;
+        let py = f64::from(y) / sf;
+        let pw = f64::from(width) / sf;
+        let ph = f64::from(height) / sf;
+        debug!(
+            "TapRegion: pixel ({}, {}, {}x{}), scale {}x -> point ({:.1}, {:.1}, {:.1}x{:.1}), device {}",
+            x, y, width, height, scale_factor, px, py, pw, ph, device
+        );
+        (px, py, pw, ph)
+    } else {
+        debug!(
+            "TapRegion: point ({}, {}, {}x{}), device {}",
+            x, y, width, height, device
+        );
+        (f64::from(x), f64::from(y), f64::from(width), f64::from(height))
+    };
+
+    idb::tap_region(device, pt_x, pt_y, pt_w, pt_h, no_retry, config)?;
+
+    // Print result
+    if let Some(scale_factor) = effective_scale {
+        info!(
+            "TapRegion success: pixel ({}, {}, {}x{}) -> point ({:.1}, {:.1}, {:.1}x{:.1}), scale {}x, retry={}",
+            x, y, width, height, pt_x, pt_y, pt_w, pt_h, scale_factor, !no_retry
+        );
+        println!(
+            "Tapped region pixel ({}, {}, {}x{}) -> point ({:.1}, {:.1}, {:.1}x{:.1}) on {} (scale: {}x{}{})",
+            x, y, width, height, pt_x, pt_y, pt_w, pt_h, device, scale_factor,
+            if scale.is_none() { " auto-detected" } else { "" },
+            if no_retry { "" } else { ", retry enabled" }
+        );
+    } else {
+        info!(
+            "TapRegion success: point ({}, {}, {}x{}), retry={}",
+            x, y, width, height, !no_retry
+        );
+        println!(
+            "Tapped region ({}, {}, {}x{}) on {}{}",
+            x, y, width, height, device,
             if no_retry { "" } else { " (retry enabled)" }
         );
     }
