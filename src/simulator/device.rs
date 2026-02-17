@@ -89,8 +89,8 @@ impl DeviceScaleFactor {
 
     /// Detect scale factor from device type name
     ///
-    /// iPhone Plus/Max/Pro Max models use 3x, others default to 2x.
-    /// Known 2x exceptions: iPhone XR, iPad Pro (all generations).
+    /// iPhone Plus/Max/Pro/Air models use 3x, others default to 2x.
+    /// Known 2x exceptions: iPhone XR, iPad Pro/Air (all generations).
     pub fn from_device_name(name: &str) -> Self {
         let lower = name.to_lowercase();
         let is_iphone = lower.contains("iphone");
@@ -100,11 +100,12 @@ impl DeviceScaleFactor {
             return DeviceScaleFactor::X2;
         }
 
-        // 3x iPhones: Plus, Max, Pro, X/XS, and standard models from iPhone 11+
+        // 3x iPhones: Plus, Max, Pro, Air, X/XS, and standard models from iPhone 11+
         if is_iphone
             && (lower.contains("plus")
                 || lower.contains("max")
                 || lower.contains("pro")
+                || lower.contains("air")
                 || lower.contains("iphone xs")
                 || lower.contains("iphone x ")
                 || lower.ends_with("iphone x")
@@ -189,6 +190,9 @@ mod tests {
         // Plus models
         assert_eq!(DeviceScaleFactor::from_device_name("iPhone 15 Plus"), DeviceScaleFactor::X3);
         assert_eq!(DeviceScaleFactor::from_device_name("iPhone 14 Plus"), DeviceScaleFactor::X3);
+
+        // Air models
+        assert_eq!(DeviceScaleFactor::from_device_name("iPhone Air"), DeviceScaleFactor::X3);
 
         // iPhone X series
         assert_eq!(DeviceScaleFactor::from_device_name("iPhone X"), DeviceScaleFactor::X3);
