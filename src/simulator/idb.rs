@@ -401,6 +401,9 @@ pub fn tap_with_retry(udid: &str, x: f64, y: f64, config: &CaptureConfig) -> Res
 
     if pre_hash != Some(post_hash) {
         eprintln!("[tap_with_retry] UI state changed after attempt 1. Success.");
+        if config.policy == ObservationPolicy::Always {
+            capture::observe(udid, config, "success_1");
+        }
         return Ok(());
     }
 
@@ -438,6 +441,9 @@ pub fn tap_with_retry(udid: &str, x: f64, y: f64, config: &CaptureConfig) -> Res
                         "[tap_with_retry] UI state changed after attempt {}. Success.",
                         i + 2
                     );
+                    if config.policy == ObservationPolicy::Always {
+                        capture::observe(udid, config, &format!("success_{}", i + 2));
+                    }
                     return Ok(());
                 }
                 last_hash = new_hash;
