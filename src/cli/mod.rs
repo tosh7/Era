@@ -6,11 +6,51 @@ use std::path::Path;
 
 use clap::Parser;
 use commands::{Cli, Commands, KeyType};
+use log::{debug, info};
 
+use crate::capture::CaptureConfig;
 use crate::simulator::{idb, operations};
+
+/// Initialize the logger based on verbosity level
+fn init_logger(verbose: u8) {
+    let filter = match verbose {
+        0 => log::LevelFilter::Warn,
+        1 => log::LevelFilter::Info,
+        _ => log::LevelFilter::Debug,
+    };
+
+    env_logger::Builder::new()
+        .filter_level(filter)
+        .format_timestamp_millis()
+        .init();
+}
+
+/// Resolve the effective scale factor.
+/// If `--scale` was provided, use it. Otherwise, auto-detect from the device.
+fn resolve_scale(device: &str, explicit_scale: Option<u32>) -> Option<u32> {
+    if let Some(s) = explicit_scale {
+        info!("Using explicit scale factor: {}x", s);
+        return Some(s);
+    }
+
+    match operations::detect_device_scale(device) {
+        Ok(detected) => {
+            info!("Auto-detected scale factor: {} for device {}", detected, device);
+            Some(detected.value() as u32)
+        }
+        Err(e) => {
+            log::warn!("Failed to auto-detect scale for device {}: {}. Treating coordinates as logical points.", device, e);
+            None
+        }
+    }
+}
 
 pub fn run() {
     let cli = Cli::parse();
+    init_logger(cli.verbose);
+
+    let debug_capture = cli.debug_capture;
+    let debug_dir = cli.debug_dir.clone();
 
     let result = match cli.command {
         Commands::List { booted } => handle_list(booted),
@@ -21,7 +61,17 @@ pub fn run() {
         Commands::Screenshot { device, output } => handle_screenshot(&device, &output),
         Commands::Input { device, key } => handle_input(&device, key),
         Commands::Openurl { device, url } => handle_openurl(&device, &url),
-        Commands::Tap { device, x, y, scale } => handle_tap(&device, x, y, scale),
+        Commands::Tap {
+            device,
+            x,
+            y,
+            scale,
+            no_retry,
+            observe,
+        } => {
+            let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
+            handle_tap(&device, x, y, scale, no_retry, &config)
+        }
         Commands::Swipe {
             device,
             start_x,
@@ -29,6 +79,7 @@ pub fn run() {
             end_x,
             end_y,
             scale,
+            observe: _,
         } => handle_swipe(&device, start_x, start_y, end_x, end_y, scale),
         Commands::Enumerate { device } => handle_enumerate(&device),
     };
@@ -130,20 +181,48 @@ fn handle_openurl(device: &str, url: &str) -> Result<(), Box<dyn std::error::Err
     Ok(())
 }
 
-fn handle_tap(device: &str, x: u32, y: u32, scale: Option<u32>) -> Result<(), Box<dyn std::error::Error>> {
-    if let Some(scale_factor) = scale {
-        // Pixel coordinates - convert to logical points
-        idb::tap_pixel(device, f64::from(x), f64::from(y), f64::from(scale_factor))?;
-        let point_x = f64::from(x) / f64::from(scale_factor);
-        let point_y = f64::from(y) / f64::from(scale_factor);
+fn handle_tap(device: &str, x: u32, y: u32, scale: Option<u32>, no_retry: bool, config: &CaptureConfig) -> Result<(), Box<dyn std::error::Error>> {
+    let effective_scale = resolve_scale(device, scale);
+
+    // Resolve the logical point coordinates
+    let (point_x, point_y) = if let Some(scale_factor) = effective_scale {
+        let px = f64::from(x) / f64::from(scale_factor);
+        let py = f64::from(y) / f64::from(scale_factor);
+        debug!(
+            "Tap: pixel ({}, {}), scale {}x -> point ({:.1}, {:.1}), device {}",
+            x, y, scale_factor, px, py, device
+        );
+        (px, py)
+    } else {
+        debug!("Tap: point ({}, {}), device {}", x, y, device);
+        (f64::from(x), f64::from(y))
+    };
+
+    if no_retry {
+        idb::tap(device, point_x, point_y)?;
+    } else {
+        idb::tap_with_retry(device, point_x, point_y, config)?;
+    }
+
+    // Print result
+    if let Some(scale_factor) = effective_scale {
+        info!(
+            "Tap success: pixel ({}, {}) -> point ({:.1}, {:.1}), scale {}x, retry={}",
+            x, y, point_x, point_y, scale_factor, !no_retry
+        );
         println!(
-            "Tapped at pixel ({}, {}) -> point ({:.1}, {:.1}) on {} (scale: {}x)",
-            x, y, point_x, point_y, device, scale_factor
+            "Tapped at pixel ({}, {}) -> point ({:.1}, {:.1}) on {} (scale: {}x{}{})",
+            x, y, point_x, point_y, device, scale_factor,
+            if scale.is_none() { " auto-detected" } else { "" },
+            if no_retry { "" } else { ", retry enabled" }
         );
     } else {
-        // Logical point coordinates
-        idb::tap(device, f64::from(x), f64::from(y))?;
-        println!("Tapped at point ({}, {}) on {}", x, y, device);
+        info!("Tap success: point ({}, {}), retry={}", x, y, !no_retry);
+        println!(
+            "Tapped at point ({}, {}) on {}{}",
+            x, y, device,
+            if no_retry { "" } else { " (retry enabled)" }
+        );
     }
     Ok(())
 }
@@ -156,8 +235,13 @@ fn handle_swipe(
     end_y: u32,
     scale: Option<u32>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if let Some(scale_factor) = scale {
-        // Pixel coordinates - convert to logical points
+    let effective_scale = resolve_scale(device, scale);
+
+    if let Some(scale_factor) = effective_scale {
+        debug!(
+            "Swipe: pixel ({}, {}) -> ({}, {}), scale {}x, device {}",
+            start_x, start_y, end_x, end_y, scale_factor, device
+        );
         idb::swipe_pixel(
             device,
             f64::from(start_x),
@@ -167,12 +251,20 @@ fn handle_swipe(
             f64::from(scale_factor),
             None,
         )?;
+        info!(
+            "Swipe success: pixel ({}, {}) -> ({}, {}), scale {}x",
+            start_x, start_y, end_x, end_y, scale_factor
+        );
         println!(
-            "Swiped from pixel ({}, {}) to ({}, {}) on {} (scale: {}x)",
-            start_x, start_y, end_x, end_y, device, scale_factor
+            "Swiped from pixel ({}, {}) to ({}, {}) on {} (scale: {}x{})",
+            start_x, start_y, end_x, end_y, device, scale_factor,
+            if scale.is_none() { " auto-detected" } else { "" }
         );
     } else {
-        // Logical point coordinates
+        debug!(
+            "Swipe: point ({}, {}) -> ({}, {}), device {}",
+            start_x, start_y, end_x, end_y, device
+        );
         idb::swipe(
             device,
             f64::from(start_x),
@@ -181,6 +273,10 @@ fn handle_swipe(
             f64::from(end_y),
             None,
         )?;
+        info!(
+            "Swipe success: point ({}, {}) -> ({}, {})",
+            start_x, start_y, end_x, end_y
+        );
         println!(
             "Swiped from point ({}, {}) to ({}, {}) on {}",
             start_x, start_y, end_x, end_y, device

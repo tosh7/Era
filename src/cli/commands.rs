@@ -2,10 +2,24 @@
 
 use clap::{Parser, Subcommand, ValueEnum};
 
+use crate::capture::ObservationPolicy;
+
 #[derive(Parser)]
 #[command(name = "era")]
 #[command(about = "iOS Simulator CLI tool", long_about = None)]
 pub struct Cli {
+    /// Increase logging verbosity (-v for info, -vv for debug)
+    #[arg(short, long, action = clap::ArgAction::Count, global = true)]
+    pub verbose: u8,
+
+    /// Save debug screenshots to disk during tap operations
+    #[arg(long, global = true)]
+    pub debug_capture: bool,
+
+    /// Directory for debug screenshots
+    #[arg(long, global = true, default_value = "/tmp/era-debug/")]
+    pub debug_dir: String,
+
     #[command(subcommand)]
     pub command: Commands,
 }
@@ -111,6 +125,15 @@ pub enum Commands {
         /// When set, x and y are treated as pixel coordinates from screenshots.
         #[arg(short, long)]
         scale: Option<u32>,
+
+        /// Disable automatic retry with UI state verification.
+        /// When set, performs a single tap without checking if the UI changed.
+        #[arg(long)]
+        no_retry: bool,
+
+        /// Screenshot observation policy for retry diagnostics
+        #[arg(long, value_enum, default_value = "on-failure")]
+        observe: ObservationPolicy,
     },
 
     /// Swipe on the simulator screen (requires IDB)
@@ -144,6 +167,10 @@ pub enum Commands {
         /// When set, coordinates are treated as pixels from screenshots.
         #[arg(short, long)]
         scale: Option<u32>,
+
+        /// Screenshot observation policy (reserved for future use)
+        #[arg(long, value_enum, default_value = "on-failure")]
+        observe: ObservationPolicy,
     },
 
     /// Enumerate available input devices
