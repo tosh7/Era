@@ -79,7 +79,6 @@ pub fn run() {
             end_x,
             end_y,
             scale,
-            observe: _,
         } => handle_swipe(&device, start_x, start_y, end_x, end_y, scale),
         Commands::Enumerate { device } => handle_enumerate(&device),
     };

@@ -131,7 +131,8 @@ pub enum Commands {
         #[arg(long)]
         no_retry: bool,
 
-        /// Screenshot observation policy for retry diagnostics
+        /// Screenshot observation policy for retry diagnostics.
+        /// Requires --debug-capture to save screenshots to disk.
         #[arg(long, value_enum, default_value = "on-failure")]
         observe: ObservationPolicy,
     },
@@ -167,10 +168,6 @@ pub enum Commands {
         /// When set, coordinates are treated as pixels from screenshots.
         #[arg(short, long)]
         scale: Option<u32>,
-
-        /// Screenshot observation policy (reserved for future use)
-        #[arg(long, value_enum, default_value = "on-failure")]
-        observe: ObservationPolicy,
     },
 
     /// Enumerate available input devices
