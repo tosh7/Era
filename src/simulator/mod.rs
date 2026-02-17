@@ -3,11 +3,12 @@
 pub mod device;
 pub mod idb;
 pub mod operations;
+pub mod orientation;
 
 // Re-export commonly used types
-pub use device::{Device, DeviceInfo, DeviceState, DeviceType, Runtime, SimulatorList};
+pub use device::{Device, DeviceInfo, DeviceScaleFactor, DeviceState, DeviceType, Runtime, SimulatorList};
 pub use operations::{
-    boot, enumerate_devices, get_booted_device, get_simulator_list, install_app, launch_app,
-    list_devices, open_url, send_key, shutdown, shutdown_all, take_screenshot, terminate_app,
-    uninstall_app, Result, SimulatorError,
+    boot, detect_device_scale, enumerate_devices, get_booted_device, get_simulator_list,
+    install_app, launch_app, list_devices, open_url, send_key, shutdown, shutdown_all,
+    take_screenshot, terminate_app, uninstall_app, Result, SimulatorError,
 };
