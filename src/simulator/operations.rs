@@ -3,7 +3,7 @@ use std::path::Path;
 use std::process::Command;
 use thiserror::Error;
 
-use super::device::{DeviceInfo, SimulatorList};
+use super::device::{DeviceInfo, DeviceScaleFactor, SimulatorList};
 
 /// Errors that can occur during simulator operations
 #[derive(Debug, Error)]
@@ -225,6 +225,58 @@ pub fn enumerate_devices(udid: &str) -> Result<String> {
 pub fn get_booted_device() -> Result<Option<DeviceInfo>> {
     let devices = list_devices()?;
     Ok(devices.into_iter().find(|d| d.device.is_booted()))
+}
+
+/// Detect the scale factor for a device by its UDID
+///
+/// Looks up the device in the simulator list, finds its device type,
+/// and infers the scale factor from the device type name.
+/// Falls back to 2x if the device or device type cannot be determined.
+pub fn detect_device_scale(udid: &str) -> Result<DeviceScaleFactor> {
+    let sim_list = get_simulator_list()?;
+
+    // Find the device and its device_type_identifier
+    let device_type_id = sim_list
+        .devices
+        .values()
+        .flatten()
+        .find(|d| d.udid == udid)
+        .and_then(|d| d.device_type_identifier.clone());
+
+    let Some(type_id) = device_type_id else {
+        log::warn!(
+            "Could not find device type for UDID {}. Defaulting to 2x scale.",
+            udid
+        );
+        return Ok(DeviceScaleFactor::X2);
+    };
+
+    // Look up the device type name from devicetypes
+    let device_type_name = sim_list
+        .devicetypes
+        .iter()
+        .find(|dt| dt.identifier == type_id)
+        .map(|dt| dt.name.as_str());
+
+    match device_type_name {
+        Some(name) => {
+            let scale = DeviceScaleFactor::from_device_name(name);
+            log::info!(
+                "Detected device type '{}' for UDID {} -> scale {}",
+                name,
+                udid,
+                scale
+            );
+            Ok(scale)
+        }
+        None => {
+            log::warn!(
+                "Device type identifier '{}' not found in device types. Defaulting to 2x scale.",
+                type_id
+            );
+            Ok(DeviceScaleFactor::X2)
+        }
+    }
 }
 
 #[cfg(test)]
