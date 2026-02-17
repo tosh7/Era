@@ -482,7 +482,7 @@ const REGION_JITTER: (f64, f64) = (0.05, -0.03);
 /// Tap within a rectangular region on the simulator screen
 ///
 /// Computes the center of the region and applies a small deterministic jitter
-/// (within 10% of region dimensions) to simulate more natural tap behavior.
+/// (within 10% of region dimensions) to avoid always hitting the exact center.
 /// The tap point is clamped to stay within the region bounds.
 ///
 /// # Arguments
@@ -493,7 +493,7 @@ const REGION_JITTER: (f64, f64) = (0.05, -0.03);
 /// * `height` - Region height (in logical points)
 /// * `no_retry` - If true, perform a single tap; if false, use tap_with_retry
 /// * `config` - Capture configuration for screenshot observation
-pub fn tap_region(
+pub(crate) fn tap_region(
     udid: &str,
     x: f64,
     y: f64,
