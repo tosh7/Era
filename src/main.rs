@@ -1,7 +1,3 @@
-mod capture;
-mod cli;
-mod simulator;
-
 fn main() {
-    cli::run();
+    era::cli::run();
 }
