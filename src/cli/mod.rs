@@ -9,7 +9,7 @@ use commands::{Cli, Commands, KeyType};
 use log::{debug, info};
 
 use crate::capture::CaptureConfig;
-use crate::simulator::{idb, operations};
+use crate::simulator::{idb, operations, snapshot, ui_tree};
 
 /// Initialize the logger based on verbosity level
 fn init_logger(verbose: u8) {
@@ -61,16 +61,34 @@ pub fn run() {
         Commands::Screenshot { device, output } => handle_screenshot(&device, &output),
         Commands::Input { device, key } => handle_input(&device, key),
         Commands::Openurl { device, url } => handle_openurl(&device, &url),
+        Commands::Snapshot {
+            device,
+            show_frames,
+            interactive,
+            filter,
+        } => handle_snapshot(&device, show_frames, interactive, filter),
         Commands::Tap {
             device,
             x,
             y,
+            ref_id,
             scale,
             no_retry,
             observe,
         } => {
             let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
-            handle_tap(&device, x, y, scale, no_retry, &config)
+            handle_tap(&device, x, y, ref_id, scale, no_retry, &config)
+        }
+        Commands::Fill {
+            device,
+            ref_id,
+            text,
+            clear,
+            no_retry,
+            observe,
+        } => {
+            let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
+            handle_fill(&device, ref_id, &text, clear, no_retry, &config)
         }
         Commands::TapRegion {
             device,
@@ -203,10 +221,76 @@ fn handle_openurl(device: &str, url: &str) -> Result<(), Box<dyn std::error::Err
     Ok(())
 }
 
-fn handle_tap(device: &str, x: u32, y: u32, scale: Option<u32>, no_retry: bool, config: &CaptureConfig) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_snapshot(
+    device: &str,
+    show_frames: bool,
+    interactive: bool,
+    filter: Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Taking snapshot of device: {}", device);
+
+    let json_output = idb::describe_all(device)?;
+    let elements = ui_tree::parse(&json_output)?;
+
+    let options = snapshot::SnapshotOptions {
+        verbose: show_frames,
+        interactive_only: interactive,
+        filter_type: filter,
+    };
+
+    let (output, ref_map) = snapshot::build_snapshot(&elements, &options);
+    snapshot::save_ref_map(device, &ref_map)?;
+
+    let count = ref_map.entries.len();
+    print!("{}", output);
+    eprintln!(
+        "[era] Snapshot: {} elements indexed. Ref map saved to {}",
+        count,
+        snapshot::ref_map_path(device)
+    );
+
+    Ok(())
+}
+
+fn handle_tap(
+    device: &str,
+    x: Option<u32>,
+    y: Option<u32>,
+    ref_id: Option<u32>,
+    scale: Option<u32>,
+    no_retry: bool,
+    config: &CaptureConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // Ref-based tap
+    if let Some(ref_id) = ref_id {
+        let (point_x, point_y) = snapshot::resolve_ref(device, ref_id)?;
+
+        if no_retry {
+            idb::tap(device, point_x, point_y)?;
+        } else {
+            idb::tap_with_retry(device, point_x, point_y, config)?;
+        }
+
+        info!(
+            "Tap success: ref [{}] -> point ({:.1}, {:.1}), retry={}",
+            ref_id, point_x, point_y, !no_retry
+        );
+        println!(
+            "Tapped ref [{}] at point ({:.1}, {:.1}) on {}{}",
+            ref_id,
+            point_x,
+            point_y,
+            device,
+            if no_retry { "" } else { " (retry enabled)" }
+        );
+        return Ok(());
+    }
+
+    // Coordinate-based tap (original behavior)
+    let x = x.expect("x is required when --ref is not set");
+    let y = y.expect("y is required when --ref is not set");
     let effective_scale = resolve_scale(device, scale);
 
-    // Resolve the logical point coordinates
     let (point_x, point_y) = if let Some(scale_factor) = effective_scale {
         let px = f64::from(x) / f64::from(scale_factor);
         let py = f64::from(y) / f64::from(scale_factor);
@@ -246,6 +330,48 @@ fn handle_tap(device: &str, x: u32, y: u32, scale: Option<u32>, no_retry: bool, 
             if no_retry { "" } else { " (retry enabled)" }
         );
     }
+    Ok(())
+}
+
+fn handle_fill(
+    device: &str,
+    ref_id: u32,
+    text: &str,
+    clear: bool,
+    no_retry: bool,
+    config: &CaptureConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let (point_x, point_y) = snapshot::resolve_ref(device, ref_id)?;
+
+    // Tap to focus the element
+    if no_retry {
+        idb::tap(device, point_x, point_y)?;
+    } else {
+        idb::tap_with_retry(device, point_x, point_y, config)?;
+    }
+    info!("Fill: tapped ref [{}] to focus at ({:.1}, {:.1})", ref_id, point_x, point_y);
+
+    // Clear existing text if requested (select all via triple-tap, then delete)
+    if clear {
+        // Triple-tap to select all text
+        idb::tap(device, point_x, point_y)?;
+        idb::tap(device, point_x, point_y)?;
+        // Send delete key to clear selected text
+        idb::send_key(device, "DELETE")?;
+        info!("Fill: cleared existing text");
+    }
+
+    // Input the text
+    idb::text_input(device, text)?;
+
+    info!("Fill success: ref [{}], text \"{}\"", ref_id, text);
+    println!(
+        "Filled ref [{}] with \"{}\" on {}{}",
+        ref_id,
+        text,
+        device,
+        if clear { " (cleared first)" } else { "" }
+    );
     Ok(())
 }
 
