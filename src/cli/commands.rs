@@ -328,6 +328,12 @@ pub enum Commands {
         #[arg(short, long, required = true)]
         device: String,
     },
+
+    /// Start Era as an MCP (Model Context Protocol) server
+    ///
+    /// Runs a JSON-RPC server over stdio, exposing iOS Simulator operations
+    /// as MCP tools for use with Claude Code and other MCP clients.
+    Mcp,
 }
 
 /// Session management subcommands

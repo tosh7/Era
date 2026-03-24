@@ -811,3 +811,20 @@ fn test_no_command_fails() {
     let result = parse(&["era"]);
     assert!(result.is_err());
 }
+
+// -------------------------------------------------------------------
+// mcp command — argument parsing
+// -------------------------------------------------------------------
+
+#[test]
+fn test_mcp_command() {
+    let cli = parse(&["era", "mcp"]).unwrap();
+    assert!(matches!(cli.command, Commands::Mcp));
+}
+
+#[test]
+fn test_mcp_with_verbose() {
+    let cli = parse(&["era", "-v", "mcp"]).unwrap();
+    assert!(matches!(cli.command, Commands::Mcp));
+    assert_eq!(cli.verbose, 1);
+}

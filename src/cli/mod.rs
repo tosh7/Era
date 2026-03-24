@@ -164,6 +164,10 @@ pub fn run() {
             handle_swipe(&udid, start_x, start_y, end_x, end_y, scale, session_scale)
         }
         Commands::Enumerate { device } => handle_enumerate(&device),
+        Commands::Mcp => {
+            crate::mcp::serve();
+            return;
+        }
     };
 
     if let Err(e) = result {
