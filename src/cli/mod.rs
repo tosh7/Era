@@ -9,7 +9,7 @@ use commands::{Cli, Commands, KeyType, SessionCommand};
 use log::{debug, info};
 
 use crate::capture::CaptureConfig;
-use crate::simulator::{idb, operations, session, snapshot, ui_tree};
+use crate::simulator::{idb, operations, session, snapshot, ui_tree, wait};
 
 /// Initialize the logger based on verbosity level
 fn init_logger(verbose: u8) {
@@ -101,6 +101,8 @@ pub fn run() {
             element_type,
             index,
             scale,
+            wait: wait_flag,
+            timeout,
             no_retry,
             observe,
         } => {
@@ -109,7 +111,7 @@ pub fn run() {
                 Err(e) => return exit_err(e),
             };
             let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
-            handle_tap(&udid, x, y, ref_id, text, element_type, index, scale, session_scale, no_retry, &config)
+            handle_tap(&udid, x, y, ref_id, text, element_type, index, scale, session_scale, wait_flag, timeout, no_retry, &config)
         }
         Commands::Fill {
             device,
@@ -120,6 +122,8 @@ pub fn run() {
             index,
             text,
             clear,
+            wait: wait_flag,
+            timeout,
             no_retry,
             observe,
         } => {
@@ -128,7 +132,7 @@ pub fn run() {
                 Err(e) => return exit_err(e),
             };
             let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
-            handle_fill(&udid, ref_id, target_text, element_type, index, &text, clear, no_retry, &config)
+            handle_fill(&udid, ref_id, target_text, element_type, index, &text, clear, wait_flag, timeout, no_retry, &config)
         }
         Commands::TapRegion {
             device,
@@ -381,6 +385,24 @@ fn handle_snapshot(
     Ok(())
 }
 
+/// Build an ElementSelector from CLI --text/--type/--index options
+fn build_selector(
+    text: Option<&str>,
+    element_type: Option<&str>,
+    index: Option<u32>,
+) -> Result<wait::ElementSelector, Box<dyn std::error::Error>> {
+    if let Some(text) = text {
+        Ok(wait::ElementSelector::Text(text.to_string()))
+    } else if let Some(element_type) = element_type {
+        Ok(wait::ElementSelector::Type {
+            element_type: element_type.to_string(),
+            index: index.unwrap_or(0),
+        })
+    } else {
+        Err("No selector provided for --wait".into())
+    }
+}
+
 /// Resolve element coordinates from a live UI tree query (for --text and --type selectors)
 fn resolve_live_element(
     device: &str,
@@ -410,6 +432,8 @@ fn handle_tap(
     index: Option<u32>,
     scale: Option<u32>,
     session_scale: Option<u32>,
+    wait_flag: bool,
+    timeout: u64,
     no_retry: bool,
     config: &CaptureConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -438,8 +462,26 @@ fn handle_tap(
         return Ok(());
     }
 
-    // Semantic selector tap (--text or --type)
+    // Semantic selector tap (--text or --type) with optional auto-wait
     if text.is_some() || element_type.is_some() {
+        if wait_flag {
+            // Auto-wait path: poll until element appears, then tap
+            let selector = build_selector(text.as_deref(), element_type.as_deref(), index)?;
+            let result = wait::tap_element_with_wait(device, &selector, timeout, no_retry, config)
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+            println!(
+                "Tapped {} at point ({:.1}, {:.1}) on {} (waited){}",
+                selector,
+                result.center_x,
+                result.center_y,
+                device,
+                if no_retry { "" } else { " (retry enabled)" }
+            );
+            return Ok(());
+        }
+
+        // Immediate path: single UI tree query
         let (point_x, point_y, desc) = resolve_live_element(
             device,
             text.as_deref(),
@@ -523,9 +565,29 @@ fn handle_fill(
     index: Option<u32>,
     text: &str,
     clear: bool,
+    wait_flag: bool,
+    timeout: u64,
     no_retry: bool,
     config: &CaptureConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    // Auto-wait path for --target or --type selectors
+    if wait_flag && (target_text.is_some() || element_type.is_some()) {
+        let selector = build_selector(target_text.as_deref(), element_type.as_deref(), index)?;
+        let result = wait::fill_element_with_wait(device, &selector, text, clear, timeout, no_retry, config)
+            .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+        println!(
+            "Filled {} with \"{}\" at ({:.1}, {:.1}) on {} (waited){}",
+            selector,
+            text,
+            result.center_x,
+            result.center_y,
+            device,
+            if clear { " (cleared first)" } else { "" }
+        );
+        return Ok(());
+    }
+
     // Resolve target element coordinates
     let (point_x, point_y, target_desc) = if let Some(ref_id) = ref_id {
         let (x, y) = snapshot::resolve_ref(device, ref_id)?;

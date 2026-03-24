@@ -179,6 +179,15 @@ pub enum Commands {
         #[arg(short, long, requires = "x")]
         scale: Option<u32>,
 
+        /// Wait for the element to appear before tapping (auto-wait).
+        /// Only used with --text or --type selectors.
+        #[arg(long, conflicts_with_all = ["x", "y", "ref_id"])]
+        wait: bool,
+
+        /// Timeout in milliseconds for --wait (default: 5000)
+        #[arg(long, requires = "wait", default_value = "5000")]
+        timeout: u64,
+
         /// Disable automatic retry with UI state verification.
         #[arg(long)]
         no_retry: bool,
@@ -227,6 +236,15 @@ pub enum Commands {
         /// Clear existing text before input (triple-tap to select all, then replace)
         #[arg(long)]
         clear: bool,
+
+        /// Wait for the element to appear before filling (auto-wait).
+        /// Only used with --target or --type selectors.
+        #[arg(long, conflicts_with = "ref_id")]
+        wait: bool,
+
+        /// Timeout in milliseconds for --wait (default: 5000)
+        #[arg(long, requires = "wait", default_value = "5000")]
+        timeout: u64,
 
         /// Disable automatic retry for the initial tap.
         #[arg(long)]
