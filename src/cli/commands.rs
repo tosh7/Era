@@ -1,6 +1,6 @@
 // CLI commands definition
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 
 use crate::capture::ObservationPolicy;
 
@@ -346,6 +346,13 @@ pub enum Commands {
         #[arg(short, long, required = true)]
         device: String,
     },
+
+    /// Assert a condition on a UI element (requires IDB)
+    ///
+    /// Polls the UI tree until the condition is met or timeout expires.
+    /// Exit code 0 = pass, 1 = fail.
+    /// Example: era assert --device <ID> visible --text "Login"
+    Assert(AssertArgs),
 }
 
 /// Session management subcommands
@@ -392,4 +399,97 @@ pub enum KeyType {
     VolumeDown,
     /// Shake gesture
     Shake,
+}
+
+/// Arguments for the `assert` command
+#[derive(Args)]
+pub struct AssertArgs {
+    /// Simulator device ID or name
+    #[arg(short, long, conflicts_with = "session")]
+    pub device: Option<String>,
+
+    /// Session name (use instead of --device)
+    #[arg(long, conflicts_with = "device")]
+    pub session: Option<String>,
+
+    /// Timeout in milliseconds (default: 5000)
+    #[arg(long, default_value = "5000")]
+    pub timeout: u64,
+
+    #[command(subcommand)]
+    pub condition: AssertCondition,
+}
+
+/// Assertion condition subcommands
+#[derive(Subcommand)]
+pub enum AssertCondition {
+    /// Assert element is visible (exists with non-zero frame)
+    Visible {
+        #[command(flatten)]
+        selector: SelectorArgs,
+    },
+
+    /// Assert element is hidden (not found or zero-size frame)
+    Hidden {
+        #[command(flatten)]
+        selector: SelectorArgs,
+    },
+
+    /// Assert element is enabled
+    Enabled {
+        #[command(flatten)]
+        selector: SelectorArgs,
+    },
+
+    /// Assert element is disabled
+    Disabled {
+        #[command(flatten)]
+        selector: SelectorArgs,
+    },
+
+    /// Assert element text matches
+    Text {
+        #[command(flatten)]
+        selector: SelectorArgs,
+
+        /// Assert text exactly equals this value
+        #[arg(long, required_unless_present = "contains")]
+        equals: Option<String>,
+
+        /// Assert text contains this value (case-insensitive)
+        #[arg(long, required_unless_present = "equals")]
+        contains: Option<String>,
+    },
+
+    /// Assert the count of matching elements
+    Count {
+        #[command(flatten)]
+        selector: SelectorArgs,
+
+        /// Expected number of matching elements
+        #[arg(long, required = true)]
+        expected: u32,
+    },
+}
+
+/// Shared selector arguments for element targeting
+///
+/// Exactly one of --text, --type, or --ref must be specified.
+#[derive(Args, Debug)]
+pub struct SelectorArgs {
+    /// Find element by text (case-insensitive partial match on AXLabel/AXValue)
+    #[arg(long, required_unless_present_any = ["ref_id", "element_type"], conflicts_with_all = ["ref_id", "element_type", "index"])]
+    pub text: Option<String>,
+
+    /// Find element by type (e.g. "Button", "TextField")
+    #[arg(long = "type", required_unless_present_any = ["ref_id", "text"], conflicts_with_all = ["ref_id", "text"])]
+    pub element_type: Option<String>,
+
+    /// 0-based index when multiple elements match --type (default: 0)
+    #[arg(long, requires = "element_type")]
+    pub index: Option<u32>,
+
+    /// Ref number from `era snapshot` output
+    #[arg(long = "ref", required_unless_present_any = ["text", "element_type"], conflicts_with_all = ["text", "element_type", "index"])]
+    pub ref_id: Option<u32>,
 }

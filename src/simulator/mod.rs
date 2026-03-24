@@ -1,5 +1,6 @@
 // Simulator module - iOS Simulator operations using xcrun simctl
 
+pub mod assertion;
 pub mod device;
 pub mod idb;
 pub mod operations;

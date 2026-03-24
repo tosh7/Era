@@ -5,11 +5,11 @@ pub mod commands;
 use std::path::Path;
 
 use clap::Parser;
-use commands::{Cli, Commands, KeyType, SessionCommand};
+use commands::{AssertCondition, Cli, Commands, KeyType, SelectorArgs, SessionCommand};
 use log::{debug, info};
 
 use crate::capture::CaptureConfig;
-use crate::simulator::{idb, operations, session, snapshot, ui_tree, wait};
+use crate::simulator::{assertion, idb, operations, session, snapshot, ui_tree, wait};
 
 /// Initialize the logger based on verbosity level
 fn init_logger(verbose: u8) {
@@ -168,6 +168,13 @@ pub fn run() {
             handle_swipe(&udid, start_x, start_y, end_x, end_y, scale, session_scale)
         }
         Commands::Enumerate { device } => handle_enumerate(&device),
+        Commands::Assert(args) => {
+            let (udid, _) = match resolve_device_args(args.session.as_deref(), args.device.as_deref()) {
+                Ok(v) => v,
+                Err(e) => return exit_err(e),
+            };
+            handle_assert(&udid, args.condition, args.timeout)
+        }
     };
 
     if let Err(e) = result {
@@ -470,11 +477,12 @@ fn handle_tap(
             let result = wait::tap_element_with_wait(device, &selector, timeout, no_retry, config)
                 .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
 
+            let (_, cx, cy) = result;
             println!(
                 "Tapped {} at point ({:.1}, {:.1}) on {} (waited){}",
                 selector,
-                result.center_x,
-                result.center_y,
+                cx,
+                cy,
                 device,
                 if no_retry { "" } else { " (retry enabled)" }
             );
@@ -573,15 +581,32 @@ fn handle_fill(
     // Auto-wait path for --target or --type selectors
     if wait_flag && (target_text.is_some() || element_type.is_some()) {
         let selector = build_selector(target_text.as_deref(), element_type.as_deref(), index)?;
-        let result = wait::fill_element_with_wait(device, &selector, text, clear, timeout, no_retry, config)
+        let (_el, cx, cy) = wait::wait_for_element(device, &selector, timeout)
             .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+        // Tap to focus
+        if no_retry {
+            idb::tap(device, cx, cy)?;
+        } else {
+            idb::tap_with_retry(device, cx, cy, config)?;
+        }
+
+        // Clear existing text if requested
+        if clear {
+            idb::tap(device, cx, cy)?;
+            idb::tap(device, cx, cy)?;
+            idb::send_key(device, "DELETE")?;
+        }
+
+        // Input text
+        idb::text_input(device, text)?;
 
         println!(
             "Filled {} with \"{}\" at ({:.1}, {:.1}) on {} (waited){}",
             selector,
             text,
-            result.center_x,
-            result.center_y,
+            cx,
+            cy,
             device,
             if clear { " (cleared first)" } else { "" }
         );
@@ -756,4 +781,68 @@ fn handle_enumerate(device: &str) -> Result<(), Box<dyn std::error::Error>> {
     let output = operations::enumerate_devices(device)?;
     println!("{}", output);
     Ok(())
+}
+
+/// Convert SelectorArgs to assertion::Selector
+fn to_assertion_selector(
+    args: &SelectorArgs,
+) -> Result<assertion::Selector, Box<dyn std::error::Error>> {
+    if let Some(ref text) = args.text {
+        Ok(assertion::Selector::Text(text.clone()))
+    } else if let Some(ref element_type) = args.element_type {
+        Ok(assertion::Selector::Type(element_type.clone(), args.index))
+    } else if let Some(ref_id) = args.ref_id {
+        Ok(assertion::Selector::Ref(ref_id))
+    } else {
+        Err("No selector specified. Use --text, --type, or --ref.".into())
+    }
+}
+
+fn handle_assert(
+    device: &str,
+    condition: AssertCondition,
+    timeout: u64,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let (selector, cond) = match condition {
+        AssertCondition::Visible { selector } => {
+            (to_assertion_selector(&selector)?, assertion::Condition::Visible)
+        }
+        AssertCondition::Hidden { selector } => {
+            (to_assertion_selector(&selector)?, assertion::Condition::Hidden)
+        }
+        AssertCondition::Enabled { selector } => {
+            (to_assertion_selector(&selector)?, assertion::Condition::Enabled)
+        }
+        AssertCondition::Disabled { selector } => {
+            (to_assertion_selector(&selector)?, assertion::Condition::Disabled)
+        }
+        AssertCondition::Text {
+            selector,
+            equals,
+            contains,
+        } => {
+            let sel = to_assertion_selector(&selector)?;
+            let cond = if let Some(eq) = equals {
+                assertion::Condition::TextEquals(eq)
+            } else if let Some(ct) = contains {
+                assertion::Condition::TextContains(ct)
+            } else {
+                return Err("--equals or --contains is required for text assertion".into());
+            };
+            (sel, cond)
+        }
+        AssertCondition::Count { selector, expected } => {
+            (to_assertion_selector(&selector)?, assertion::Condition::Count(expected))
+        }
+    };
+
+    let result = assertion::assert_condition(device, &selector, &cond, Some(timeout));
+
+    if result.passed {
+        println!("PASS: {}", result.message);
+        Ok(())
+    } else {
+        eprintln!("FAIL: {}", result.message);
+        std::process::exit(1)
+    }
 }
