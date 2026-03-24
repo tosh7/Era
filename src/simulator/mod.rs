@@ -4,6 +4,7 @@ pub mod device;
 pub mod idb;
 pub mod operations;
 pub mod orientation;
+pub mod ui_tree;
 
 // Re-export commonly used types
 pub use device::{Device, DeviceInfo, DeviceScaleFactor, DeviceState, DeviceType, Runtime, SimulatorList};
