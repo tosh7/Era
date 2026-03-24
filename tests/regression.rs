@@ -25,7 +25,7 @@ fn test_tap_minimal_args() {
             no_retry,
             ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert_eq!(x, Some(100));
             assert_eq!(y, Some(200));
             assert!(ref_id.is_none());
@@ -94,8 +94,9 @@ fn test_tap_with_all_options() {
             scale,
             no_retry,
             observe,
+            ..
         } => {
-            assert_eq!(device, "DEVICE-UUID");
+            assert_eq!(device, Some("DEVICE-UUID".to_string()));
             assert_eq!(x, Some(300));
             assert_eq!(y, Some(600));
             assert!(ref_id.is_none());
@@ -111,8 +112,9 @@ fn test_tap_with_all_options() {
 }
 
 #[test]
-fn test_tap_missing_device_fails() {
-    let result = parse(&["era", "tap", "-x", "100", "-y", "200"]);
+fn test_tap_missing_coordinates_fails() {
+    // No -x -y and no --ref should fail
+    let result = parse(&["era", "tap", "-d", "UDID"]);
     assert!(result.is_err());
 }
 
@@ -142,7 +144,7 @@ fn test_tap_ref_only() {
             scale,
             ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert!(x.is_none());
             assert!(y.is_none());
             assert_eq!(ref_id, Some(42));
@@ -167,6 +169,32 @@ fn test_tap_ref_conflicts_with_scale() {
 #[test]
 fn test_tap_invalid_coordinate_type_fails() {
     let result = parse(&["era", "tap", "-d", "UDID", "-x", "abc", "-y", "200"]);
+    assert!(result.is_err());
+}
+
+// -------------------------------------------------------------------
+// tap with --session
+// -------------------------------------------------------------------
+
+#[test]
+fn test_tap_with_session() {
+    let cli = parse(&["era", "tap", "--session", "main", "-x", "100", "-y", "200"]).unwrap();
+    match cli.command {
+        Commands::Tap {
+            device, session, ..
+        } => {
+            assert!(device.is_none());
+            assert_eq!(session, Some("main".to_string()));
+        }
+        _ => panic!("Expected Tap command"),
+    }
+}
+
+#[test]
+fn test_tap_session_conflicts_with_device() {
+    let result = parse(&[
+        "era", "tap", "--session", "main", "-d", "UDID", "-x", "100", "-y", "200",
+    ]);
     assert!(result.is_err());
 }
 
@@ -199,8 +227,9 @@ fn test_swipe_minimal_args() {
             end_x,
             end_y,
             scale,
+            ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert_eq!(start_x, 100);
             assert_eq!(start_y, 200);
             assert_eq!(end_x, 100);
@@ -253,6 +282,34 @@ fn test_swipe_missing_end_coordinates_fails() {
     assert!(result.is_err());
 }
 
+#[test]
+fn test_swipe_with_session() {
+    let cli = parse(&[
+        "era",
+        "swipe",
+        "--session",
+        "main",
+        "--start-x",
+        "100",
+        "--start-y",
+        "200",
+        "--end-x",
+        "100",
+        "--end-y",
+        "600",
+    ])
+    .unwrap();
+    match cli.command {
+        Commands::Swipe {
+            device, session, ..
+        } => {
+            assert!(device.is_none());
+            assert_eq!(session, Some("main".to_string()));
+        }
+        _ => panic!("Expected Swipe command"),
+    }
+}
+
 // -------------------------------------------------------------------
 // tap-region command — argument parsing
 // -------------------------------------------------------------------
@@ -285,7 +342,7 @@ fn test_tap_region_minimal_args() {
             no_retry,
             ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert_eq!(x, 50);
             assert_eq!(y, 100);
             assert_eq!(width, 200);
@@ -431,8 +488,9 @@ fn test_snapshot_minimal() {
             show_frames,
             interactive,
             filter,
+            ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert!(!show_frames);
             assert!(!interactive);
             assert!(filter.is_none());
@@ -463,8 +521,22 @@ fn test_snapshot_with_options() {
 }
 
 #[test]
-fn test_snapshot_missing_device_fails() {
-    let result = parse(&["era", "snapshot"]);
+fn test_snapshot_with_session() {
+    let cli = parse(&["era", "snapshot", "--session", "main"]).unwrap();
+    match cli.command {
+        Commands::Snapshot {
+            device, session, ..
+        } => {
+            assert!(device.is_none());
+            assert_eq!(session, Some("main".to_string()));
+        }
+        _ => panic!("Expected Snapshot command"),
+    }
+}
+
+#[test]
+fn test_snapshot_session_conflicts_with_device() {
+    let result = parse(&["era", "snapshot", "--session", "main", "-d", "UDID"]);
     assert!(result.is_err());
 }
 
@@ -486,7 +558,7 @@ fn test_fill_minimal() {
             no_retry,
             ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert_eq!(ref_id, Some(5));
             assert!(target_text.is_none());
             assert!(element_type.is_none());
@@ -666,6 +738,62 @@ fn test_tap_index_requires_type() {
     // --index without --type (and no other selector) should fail
     let result = parse(&["era", "tap", "-d", "UDID", "--index", "2"]);
     assert!(result.is_err());
+}
+
+// -------------------------------------------------------------------
+// session command — argument parsing
+// -------------------------------------------------------------------
+
+#[test]
+fn test_session_connect() {
+    let cli = parse(&["era", "session", "connect", "--name", "main", "-d", "UDID"]).unwrap();
+    match cli.command {
+        Commands::Session(era::cli::commands::SessionCommand::Connect { name, device }) => {
+            assert_eq!(name, "main");
+            assert_eq!(device, "UDID");
+        }
+        _ => panic!("Expected Session Connect command"),
+    }
+}
+
+#[test]
+fn test_session_connect_default_name() {
+    let cli = parse(&["era", "session", "connect", "-d", "UDID"]).unwrap();
+    match cli.command {
+        Commands::Session(era::cli::commands::SessionCommand::Connect { name, .. }) => {
+            assert_eq!(name, "default");
+        }
+        _ => panic!("Expected Session Connect command"),
+    }
+}
+
+#[test]
+fn test_session_list() {
+    let cli = parse(&["era", "session", "list"]).unwrap();
+    assert!(matches!(
+        cli.command,
+        Commands::Session(era::cli::commands::SessionCommand::List)
+    ));
+}
+
+#[test]
+fn test_session_disconnect() {
+    let cli = parse(&["era", "session", "disconnect", "--name", "main"]).unwrap();
+    match cli.command {
+        Commands::Session(era::cli::commands::SessionCommand::Disconnect { name }) => {
+            assert_eq!(name, "main");
+        }
+        _ => panic!("Expected Session Disconnect command"),
+    }
+}
+
+#[test]
+fn test_session_disconnect_all() {
+    let cli = parse(&["era", "session", "disconnect-all"]).unwrap();
+    assert!(matches!(
+        cli.command,
+        Commands::Session(era::cli::commands::SessionCommand::DisconnectAll)
+    ));
 }
 
 // -------------------------------------------------------------------

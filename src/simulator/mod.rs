@@ -4,6 +4,7 @@ pub mod device;
 pub mod idb;
 pub mod operations;
 pub mod orientation;
+pub mod session;
 pub mod snapshot;
 pub mod ui_tree;
 

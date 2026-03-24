@@ -1,0 +1,210 @@
+[debug] [2026-02-17T03:56:57.207Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:56:57.209Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:56:57.209Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:56:57.209Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:56:57.224Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:56:57.225Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:56:57.325Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:56:57.325Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:56:57.326Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:56:57.326Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:56:57.346Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:56:57.347Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:56:57.347Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:56:57.347Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:20.066Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:20.068Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:20.078Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:20.078Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:20.078Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:20.078Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:20.187Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:20.187Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:20.188Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:20.188Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:20.306Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:20.306Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:20.306Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:20.306Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:33.988Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:33.990Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:33.990Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:33.990Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:33.997Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:33.997Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:34.096Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:34.096Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:34.097Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:34.097Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:34.105Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:34.105Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:34.105Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:34.105Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:38.684Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:38.686Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:38.686Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:38.686Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:38.692Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:38.692Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:38.779Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:38.779Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:38.779Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:38.779Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:38.787Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:38.787Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:38.787Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:38.787Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:44.283Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:44.285Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:44.285Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:44.285Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:44.291Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:44.291Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:44.468Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:44.468Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:44.468Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:44.468Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:44.469Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:44.469Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:44.469Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:44.469Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:51.867Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:51.873Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:51.873Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:51.873Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:51.886Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:51.886Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:51.977Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:51.977Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:51.978Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:51.978Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:51.980Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:51.980Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:51.981Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:51.981Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:58.734Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:58.736Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:58.736Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:58.736Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:58.742Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:58.742Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:58.834Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:58.834Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:58.834Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:58.835Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:59.148Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:59.148Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:57:59.148Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:57:59.148Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:43.341Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:43.343Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:43.343Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:43.343Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:43.350Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:43.350Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:43.493Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:43.493Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:43.493Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:43.493Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:43.496Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:43.496Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:43.496Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:43.496Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:46.229Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:46.231Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:46.231Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:46.231Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:46.237Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:46.237Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:46.325Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:46.325Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:46.326Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:46.326Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:46.331Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:46.331Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:46.331Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:46.331Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:50.947Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:50.949Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:50.949Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:50.949Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:50.957Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:50.957Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:51.041Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:51.041Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:51.041Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:51.041Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:51.048Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:51.049Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:51.049Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:51.049Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:58.146Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:58.152Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:58.152Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:58.152Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:58.160Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:58.160Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:58.247Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:58.247Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:58.248Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:58.248Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:58.248Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:58.248Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T03:59:58.249Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T03:59:58.249Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:00:45.732Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:00:45.734Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:00:45.734Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:00:45.734Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:00:45.740Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:00:45.740Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:00:45.878Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:00:45.878Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:00:45.879Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:00:45.879Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:00:45.880Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:00:45.880Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:00:45.880Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:00:45.880Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:15.081Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:15.083Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:15.083Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:15.083Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:15.090Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:15.090Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:15.238Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:15.238Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:15.238Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:15.238Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:15.245Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:15.245Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:15.245Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:15.245Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:21.358Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:21.360Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:21.360Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:21.361Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:21.367Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:21.367Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:21.528Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:21.528Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:21.529Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:21.529Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:21.533Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:21.533Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:01:21.533Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:01:21.533Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:07:41.534Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:07:41.536Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:07:41.536Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:07:41.536Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:07:41.542Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:07:41.542Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:07:41.691Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:07:41.691Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:07:41.691Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:07:41.691Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:07:41.692Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:07:41.692Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
+[debug] [2026-02-17T04:07:41.692Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-17T04:07:41.692Z] > authorizing via signed-in user (satoshi.komatsu@zozo.com)
