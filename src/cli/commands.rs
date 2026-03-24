@@ -328,6 +328,37 @@ pub enum Commands {
         #[arg(short, long, required = true)]
         device: String,
     },
+
+    /// Record and view automation traces
+    ///
+    /// Traces capture each operation step during a test session,
+    /// then generate a single-file HTML report for review.
+    #[command(subcommand)]
+    Trace(TraceCommand),
+}
+
+/// Trace management subcommands
+#[derive(Subcommand)]
+pub enum TraceCommand {
+    /// Start recording a new trace
+    Start {
+        /// Trace name (used as prefix for trace ID)
+        #[arg(required = true)]
+        name: String,
+    },
+
+    /// Stop the active trace and generate a report
+    Stop,
+
+    /// Show details of a trace (opens HTML report in browser)
+    Show {
+        /// Trace ID (from `era trace list`)
+        #[arg(required = true)]
+        trace_id: String,
+    },
+
+    /// List all recorded traces
+    List,
 }
 
 /// Session management subcommands

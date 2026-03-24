@@ -811,3 +811,69 @@ fn test_no_command_fails() {
     let result = parse(&["era"]);
     assert!(result.is_err());
 }
+
+// -------------------------------------------------------------------
+// trace command — argument parsing
+// -------------------------------------------------------------------
+
+#[test]
+fn test_trace_start() {
+    let cli = parse(&["era", "trace", "start", "login-flow"]).unwrap();
+    match cli.command {
+        Commands::Trace(era::cli::commands::TraceCommand::Start { name }) => {
+            assert_eq!(name, "login-flow");
+        }
+        _ => panic!("Expected Trace Start command"),
+    }
+}
+
+#[test]
+fn test_trace_stop() {
+    let cli = parse(&["era", "trace", "stop"]).unwrap();
+    assert!(matches!(
+        cli.command,
+        Commands::Trace(era::cli::commands::TraceCommand::Stop)
+    ));
+}
+
+#[test]
+fn test_trace_show() {
+    let cli = parse(&["era", "trace", "show", "login-flow-20260324-140000"]).unwrap();
+    match cli.command {
+        Commands::Trace(era::cli::commands::TraceCommand::Show { trace_id }) => {
+            assert_eq!(trace_id, "login-flow-20260324-140000");
+        }
+        _ => panic!("Expected Trace Show command"),
+    }
+}
+
+#[test]
+fn test_trace_list() {
+    let cli = parse(&["era", "trace", "list"]).unwrap();
+    assert!(matches!(
+        cli.command,
+        Commands::Trace(era::cli::commands::TraceCommand::List)
+    ));
+}
+
+#[test]
+fn test_trace_start_missing_name_fails() {
+    let result = parse(&["era", "trace", "start"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_trace_show_missing_id_fails() {
+    let result = parse(&["era", "trace", "show"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_trace_with_verbose() {
+    let cli = parse(&["era", "-vv", "trace", "list"]).unwrap();
+    assert_eq!(cli.verbose, 2);
+    assert!(matches!(
+        cli.command,
+        Commands::Trace(era::cli::commands::TraceCommand::List)
+    ));
+}

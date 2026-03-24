@@ -5,7 +5,7 @@ pub mod commands;
 use std::path::Path;
 
 use clap::Parser;
-use commands::{Cli, Commands, KeyType, SessionCommand};
+use commands::{Cli, Commands, KeyType, SessionCommand, TraceCommand};
 use log::{debug, info};
 
 use crate::capture::CaptureConfig;
@@ -164,6 +164,7 @@ pub fn run() {
             handle_swipe(&udid, start_x, start_y, end_x, end_y, scale, session_scale)
         }
         Commands::Enumerate { device } => handle_enumerate(&device),
+        Commands::Trace(cmd) => handle_trace(cmd),
     };
 
     if let Err(e) = result {
@@ -694,4 +695,77 @@ fn handle_enumerate(device: &str) -> Result<(), Box<dyn std::error::Error>> {
     let output = operations::enumerate_devices(device)?;
     println!("{}", output);
     Ok(())
+}
+
+fn handle_trace(cmd: TraceCommand) -> Result<(), Box<dyn std::error::Error>> {
+    use crate::trace::{recorder, reporter, store};
+
+    match cmd {
+        TraceCommand::Start { name } => {
+            let trace = recorder::start_trace(&name)
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+            println!("Trace started: {}", trace.trace_id);
+            println!("  Directory: {}", store::trace_dir(&trace.trace_id).display());
+            println!("Run `era trace stop` to finish recording.");
+            Ok(())
+        }
+        TraceCommand::Stop => {
+            let trace = recorder::stop_trace()
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+            let report_path = reporter::generate_report(&trace)
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+            println!("Trace stopped: {}", trace.trace_id);
+            if let Some(summary) = &trace.summary {
+                println!(
+                    "  Steps: {}, Duration: {}ms, Assertions: {}/{} passed",
+                    summary.total_steps,
+                    summary.total_duration_ms,
+                    summary.assertions.passed,
+                    summary.assertions.total,
+                );
+            }
+            println!("  Report: {}", report_path);
+            Ok(())
+        }
+        TraceCommand::Show { trace_id } => {
+            let trace = store::load_trace(&trace_id)
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+            let report_path = reporter::generate_report(&trace)
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+            // Open in browser
+            let _ = std::process::Command::new("open")
+                .arg(&report_path)
+                .spawn();
+
+            println!("Report: {}", report_path);
+            Ok(())
+        }
+        TraceCommand::List => {
+            let traces = store::list_traces()
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+            if traces.is_empty() {
+                println!("No traces found.");
+                return Ok(());
+            }
+
+            for trace in &traces {
+                let status = if trace.ended_at.is_some() {
+                    "done"
+                } else {
+                    "active"
+                };
+                let steps = trace.steps.len();
+                println!(
+                    "  {} [{}] — {} steps, started {}",
+                    trace.trace_id, status, steps, trace.started_at
+                );
+            }
+            Ok(())
+        }
+    }
 }
