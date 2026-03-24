@@ -1,4 +1,4 @@
-// CLI commands definition - Sub1担当
+// CLI commands definition
 
 use clap::{Parser, Subcommand, ValueEnum};
 
@@ -102,14 +102,22 @@ pub enum Commands {
         url: String,
     },
 
+    /// Manage simulator sessions
+    #[command(subcommand)]
+    Session(SessionCommand),
+
     /// Show a ref-numbered UI element tree (requires IDB)
     ///
     /// Outputs a compact, Playwright-style snapshot of the current screen.
     /// Each element gets a [ref] number that can be used with `tap --ref` or `fill --ref`.
     Snapshot {
         /// Simulator device ID or name
-        #[arg(short, long, required = true)]
-        device: String,
+        #[arg(short, long, conflicts_with = "session")]
+        device: Option<String>,
+
+        /// Session name (use instead of --device)
+        #[arg(long, conflicts_with = "device")]
+        session: Option<String>,
 
         /// Include frame coordinates in output
         #[arg(long = "show-frames")]
@@ -132,8 +140,12 @@ pub enum Commands {
     /// Example: --scale 3 for iPhone Pro models (3x Retina)
     Tap {
         /// Simulator device ID or name
-        #[arg(short, long, required = true)]
-        device: String,
+        #[arg(short, long, conflicts_with = "session")]
+        device: Option<String>,
+
+        /// Session name (use instead of --device)
+        #[arg(long, conflicts_with = "device")]
+        session: Option<String>,
 
         /// X coordinate (pixels if --scale is set, otherwise logical points)
         #[arg(short = 'x', long, required_unless_present = "ref_id", conflicts_with = "ref_id")]
@@ -170,8 +182,12 @@ pub enum Commands {
     /// Use `era snapshot` first to get ref numbers.
     Fill {
         /// Simulator device ID or name
-        #[arg(short, long, required = true)]
-        device: String,
+        #[arg(short, long, conflicts_with = "session")]
+        device: Option<String>,
+
+        /// Session name (use instead of --device)
+        #[arg(long, conflicts_with = "device")]
+        session: Option<String>,
 
         /// Ref number from `era snapshot` output
         #[arg(long = "ref", required = true)]
@@ -202,8 +218,12 @@ pub enum Commands {
     #[command(name = "tap-region")]
     TapRegion {
         /// Simulator device ID or name
-        #[arg(short, long, required = true)]
-        device: String,
+        #[arg(short, long, conflicts_with = "session")]
+        device: Option<String>,
+
+        /// Session name (use instead of --device)
+        #[arg(long, conflicts_with = "device")]
+        session: Option<String>,
 
         /// Left edge X coordinate (pixels if --scale is set, otherwise logical points)
         #[arg(short = 'x', long, required = true)]
@@ -245,8 +265,12 @@ pub enum Commands {
     /// Example: --scale 3 for iPhone Pro models (3x Retina)
     Swipe {
         /// Simulator device ID or name
-        #[arg(short, long, required = true)]
-        device: String,
+        #[arg(short, long, conflicts_with = "session")]
+        device: Option<String>,
+
+        /// Session name (use instead of --device)
+        #[arg(long, conflicts_with = "device")]
+        session: Option<String>,
 
         /// Start X coordinate (pixels if --scale is set, otherwise logical points)
         #[arg(long, required = true)]
@@ -277,6 +301,35 @@ pub enum Commands {
         #[arg(short, long, required = true)]
         device: String,
     },
+}
+
+/// Session management subcommands
+#[derive(Subcommand)]
+pub enum SessionCommand {
+    /// Connect to a simulator device and create a session
+    Connect {
+        /// Session name
+        #[arg(long, default_value = "default")]
+        name: String,
+
+        /// Simulator device ID or name
+        #[arg(short, long, required = true)]
+        device: String,
+    },
+
+    /// List all active sessions
+    List,
+
+    /// Disconnect a session
+    Disconnect {
+        /// Session name to disconnect
+        #[arg(long, required = true)]
+        name: String,
+    },
+
+    /// Disconnect all sessions
+    #[command(name = "disconnect-all")]
+    DisconnectAll,
 }
 
 /// Keyboard key types for input command

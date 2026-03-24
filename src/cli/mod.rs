@@ -1,15 +1,15 @@
-// CLI module - Sub1担当
+// CLI module
 
 pub mod commands;
 
 use std::path::Path;
 
 use clap::Parser;
-use commands::{Cli, Commands, KeyType};
+use commands::{Cli, Commands, KeyType, SessionCommand};
 use log::{debug, info};
 
 use crate::capture::CaptureConfig;
-use crate::simulator::{idb, operations, snapshot, ui_tree};
+use crate::simulator::{idb, operations, session, snapshot, ui_tree};
 
 /// Initialize the logger based on verbosity level
 fn init_logger(verbose: u8) {
@@ -26,10 +26,17 @@ fn init_logger(verbose: u8) {
 }
 
 /// Resolve the effective scale factor.
-/// If `--scale` was provided, use it. Otherwise, auto-detect from the device.
-fn resolve_scale(device: &str, explicit_scale: Option<u32>) -> Option<u32> {
+/// If a cached scale from session is available, use it.
+/// If `--scale` was provided, use it.
+/// Otherwise, auto-detect from the device.
+fn resolve_scale(device: &str, explicit_scale: Option<u32>, session_scale: Option<u32>) -> Option<u32> {
     if let Some(s) = explicit_scale {
         info!("Using explicit scale factor: {}x", s);
+        return Some(s);
+    }
+
+    if let Some(s) = session_scale {
+        info!("Using cached session scale factor: {}x", s);
         return Some(s);
     }
 
@@ -43,6 +50,15 @@ fn resolve_scale(device: &str, explicit_scale: Option<u32>) -> Option<u32> {
             None
         }
     }
+}
+
+/// Resolve device from --session / --device / default session.
+/// Returns (udid, cached_scale).
+fn resolve_device_args(
+    session_name: Option<&str>,
+    device_flag: Option<&str>,
+) -> Result<(String, Option<u32>), Box<dyn std::error::Error>> {
+    session::resolve_device(session_name, device_flag).map_err(|e| e.into())
 }
 
 pub fn run() {
@@ -61,14 +77,23 @@ pub fn run() {
         Commands::Screenshot { device, output } => handle_screenshot(&device, &output),
         Commands::Input { device, key } => handle_input(&device, key),
         Commands::Openurl { device, url } => handle_openurl(&device, &url),
+        Commands::Session(cmd) => handle_session(cmd),
         Commands::Snapshot {
             device,
+            session,
             show_frames,
             interactive,
             filter,
-        } => handle_snapshot(&device, show_frames, interactive, filter),
+        } => {
+            let (udid, _) = match resolve_device_args(session.as_deref(), device.as_deref()) {
+                Ok(v) => v,
+                Err(e) => return exit_err(e),
+            };
+            handle_snapshot(&udid, show_frames, interactive, filter)
+        }
         Commands::Tap {
             device,
+            session,
             x,
             y,
             ref_id,
@@ -76,22 +101,32 @@ pub fn run() {
             no_retry,
             observe,
         } => {
+            let (udid, session_scale) = match resolve_device_args(session.as_deref(), device.as_deref()) {
+                Ok(v) => v,
+                Err(e) => return exit_err(e),
+            };
             let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
-            handle_tap(&device, x, y, ref_id, scale, no_retry, &config)
+            handle_tap(&udid, x, y, ref_id, scale, session_scale, no_retry, &config)
         }
         Commands::Fill {
             device,
+            session,
             ref_id,
             text,
             clear,
             no_retry,
             observe,
         } => {
+            let (udid, _) = match resolve_device_args(session.as_deref(), device.as_deref()) {
+                Ok(v) => v,
+                Err(e) => return exit_err(e),
+            };
             let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
-            handle_fill(&device, ref_id, &text, clear, no_retry, &config)
+            handle_fill(&udid, ref_id, &text, clear, no_retry, &config)
         }
         Commands::TapRegion {
             device,
+            session,
             x,
             y,
             width,
@@ -100,17 +135,28 @@ pub fn run() {
             no_retry,
             observe,
         } => {
+            let (udid, session_scale) = match resolve_device_args(session.as_deref(), device.as_deref()) {
+                Ok(v) => v,
+                Err(e) => return exit_err(e),
+            };
             let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
-            handle_tap_region(&device, x, y, width, height, scale, no_retry, &config)
+            handle_tap_region(&udid, x, y, width, height, scale, session_scale, no_retry, &config)
         }
         Commands::Swipe {
             device,
+            session,
             start_x,
             start_y,
             end_x,
             end_y,
             scale,
-        } => handle_swipe(&device, start_x, start_y, end_x, end_y, scale),
+        } => {
+            let (udid, session_scale) = match resolve_device_args(session.as_deref(), device.as_deref()) {
+                Ok(v) => v,
+                Err(e) => return exit_err(e),
+            };
+            handle_swipe(&udid, start_x, start_y, end_x, end_y, scale, session_scale)
+        }
         Commands::Enumerate { device } => handle_enumerate(&device),
     };
 
@@ -118,6 +164,11 @@ pub fn run() {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }
+}
+
+fn exit_err(e: Box<dyn std::error::Error>) {
+    eprintln!("Error: {}", e);
+    std::process::exit(1);
 }
 
 fn handle_list(booted_only: bool) -> Result<(), Box<dyn std::error::Error>> {
@@ -211,6 +262,88 @@ fn handle_openurl(device: &str, url: &str) -> Result<(), Box<dyn std::error::Err
     Ok(())
 }
 
+fn handle_session(cmd: SessionCommand) -> Result<(), Box<dyn std::error::Error>> {
+    match cmd {
+        SessionCommand::Connect { name, device } => {
+            // Resolve UDID from device name or ID
+            let udid = resolve_udid(&device)?;
+            let sess = session::SessionStore::connect(&name, &udid, &device)
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+            let scale_info = sess
+                .scale
+                .map(|s| format!(" (scale: {}x)", s))
+                .unwrap_or_default();
+            println!(
+                "Connected session '{}': {} ({}){}",
+                sess.name, sess.device_name, sess.udid, scale_info
+            );
+            Ok(())
+        }
+        SessionCommand::List => {
+            let sessions = session::SessionStore::list()
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+            let default_name = session::SessionStore::default_name();
+
+            if sessions.is_empty() {
+                println!("No active sessions. Run `era session connect` to create one.");
+                return Ok(());
+            }
+
+            for sess in &sessions {
+                let is_default = default_name.as_deref() == Some(&sess.name);
+                let scale_info = sess
+                    .scale
+                    .map(|s| format!(", scale: {}x", s))
+                    .unwrap_or_default();
+                println!(
+                    "{}{} - {} ({}{}){}",
+                    if is_default { "* " } else { "  " },
+                    sess.name,
+                    sess.device_name,
+                    sess.udid,
+                    scale_info,
+                    if is_default { " [default]" } else { "" }
+                );
+            }
+            Ok(())
+        }
+        SessionCommand::Disconnect { name } => {
+            session::SessionStore::disconnect(&name)
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+            println!("Disconnected session '{}'", name);
+            Ok(())
+        }
+        SessionCommand::DisconnectAll => {
+            session::SessionStore::disconnect_all()
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+            println!("Disconnected all sessions.");
+            Ok(())
+        }
+    }
+}
+
+/// Resolve a device name or UDID string to a UDID.
+/// If it looks like a UDID (contains dashes), use it directly.
+/// Otherwise, search by name.
+fn resolve_udid(device: &str) -> Result<String, Box<dyn std::error::Error>> {
+    // If it looks like a UDID already, return as-is
+    if device.contains('-') && device.len() > 20 {
+        return Ok(device.to_string());
+    }
+
+    // Try to find by name
+    let devices = operations::list_devices()?;
+    for d in &devices {
+        if d.device.name == device || d.device.udid == device {
+            return Ok(d.device.udid.clone());
+        }
+    }
+
+    // If not found, return the input as-is (might be a partial UDID)
+    Ok(device.to_string())
+}
+
 fn handle_snapshot(
     device: &str,
     show_frames: bool,
@@ -248,6 +381,7 @@ fn handle_tap(
     y: Option<u32>,
     ref_id: Option<u32>,
     scale: Option<u32>,
+    session_scale: Option<u32>,
     no_retry: bool,
     config: &CaptureConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -279,7 +413,7 @@ fn handle_tap(
     // Coordinate-based tap (original behavior)
     let x = x.expect("x is required when --ref is not set");
     let y = y.expect("y is required when --ref is not set");
-    let effective_scale = resolve_scale(device, scale);
+    let effective_scale = resolve_scale(device, scale, session_scale);
 
     let (point_x, point_y) = if let Some(scale_factor) = effective_scale {
         let px = f64::from(x) / f64::from(scale_factor);
@@ -372,10 +506,11 @@ fn handle_tap_region(
     width: u32,
     height: u32,
     scale: Option<u32>,
+    session_scale: Option<u32>,
     no_retry: bool,
     config: &CaptureConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let effective_scale = resolve_scale(device, scale);
+    let effective_scale = resolve_scale(device, scale, session_scale);
 
     // Convert all region coordinates to logical points
     let (pt_x, pt_y, pt_w, pt_h) = if let Some(scale_factor) = effective_scale {
@@ -432,8 +567,9 @@ fn handle_swipe(
     end_x: u32,
     end_y: u32,
     scale: Option<u32>,
+    session_scale: Option<u32>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let effective_scale = resolve_scale(device, scale);
+    let effective_scale = resolve_scale(device, scale, session_scale);
 
     if let Some(scale_factor) = effective_scale {
         debug!(
