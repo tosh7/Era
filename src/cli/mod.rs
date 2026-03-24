@@ -72,23 +72,29 @@ pub fn run() {
             x,
             y,
             ref_id,
+            text,
+            element_type,
+            index,
             scale,
             no_retry,
             observe,
         } => {
             let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
-            handle_tap(&device, x, y, ref_id, scale, no_retry, &config)
+            handle_tap(&device, x, y, ref_id, text, element_type, index, scale, no_retry, &config)
         }
         Commands::Fill {
             device,
             ref_id,
+            target_text,
+            element_type,
+            index,
             text,
             clear,
             no_retry,
             observe,
         } => {
             let config = CaptureConfig::new(observe, debug_capture, debug_dir.clone());
-            handle_fill(&device, ref_id, &text, clear, no_retry, &config)
+            handle_fill(&device, ref_id, target_text, element_type, index, &text, clear, no_retry, &config)
         }
         Commands::TapRegion {
             device,
@@ -242,11 +248,33 @@ fn handle_snapshot(
     Ok(())
 }
 
+/// Resolve element coordinates from a live UI tree query (for --text and --type selectors)
+fn resolve_live_element(
+    device: &str,
+    text: Option<&str>,
+    element_type: Option<&str>,
+    index: Option<u32>,
+) -> Result<(f64, f64, String), Box<dyn std::error::Error>> {
+    let json_output = idb::describe_all(device)?;
+    let elements = ui_tree::parse(&json_output)?;
+
+    if let Some(text) = text {
+        Ok(snapshot::find_by_text(&elements, text)?)
+    } else if let Some(element_type) = element_type {
+        Ok(snapshot::find_by_type_index(&elements, element_type, index)?)
+    } else {
+        Err("No selector provided".into())
+    }
+}
+
 fn handle_tap(
     device: &str,
     x: Option<u32>,
     y: Option<u32>,
     ref_id: Option<u32>,
+    text: Option<String>,
+    element_type: Option<String>,
+    index: Option<u32>,
     scale: Option<u32>,
     no_retry: bool,
     config: &CaptureConfig,
@@ -276,9 +304,39 @@ fn handle_tap(
         return Ok(());
     }
 
+    // Semantic selector tap (--text or --type)
+    if text.is_some() || element_type.is_some() {
+        let (point_x, point_y, desc) = resolve_live_element(
+            device,
+            text.as_deref(),
+            element_type.as_deref(),
+            index,
+        )?;
+
+        if no_retry {
+            idb::tap(device, point_x, point_y)?;
+        } else {
+            idb::tap_with_retry(device, point_x, point_y, config)?;
+        }
+
+        info!(
+            "Tap success: {} -> point ({:.1}, {:.1}), retry={}",
+            desc, point_x, point_y, !no_retry
+        );
+        println!(
+            "Tapped {} at point ({:.1}, {:.1}) on {}{}",
+            desc,
+            point_x,
+            point_y,
+            device,
+            if no_retry { "" } else { " (retry enabled)" }
+        );
+        return Ok(());
+    }
+
     // Coordinate-based tap (original behavior)
-    let x = x.expect("x is required when --ref is not set");
-    let y = y.expect("y is required when --ref is not set");
+    let x = x.expect("x is required when no selector is set");
+    let y = y.expect("y is required when no selector is set");
     let effective_scale = resolve_scale(device, scale);
 
     let (point_x, point_y) = if let Some(scale_factor) = effective_scale {
@@ -325,13 +383,28 @@ fn handle_tap(
 
 fn handle_fill(
     device: &str,
-    ref_id: u32,
+    ref_id: Option<u32>,
+    target_text: Option<String>,
+    element_type: Option<String>,
+    index: Option<u32>,
     text: &str,
     clear: bool,
     no_retry: bool,
     config: &CaptureConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let (point_x, point_y) = snapshot::resolve_ref(device, ref_id)?;
+    // Resolve target element coordinates
+    let (point_x, point_y, target_desc) = if let Some(ref_id) = ref_id {
+        let (x, y) = snapshot::resolve_ref(device, ref_id)?;
+        (x, y, format!("ref [{}]", ref_id))
+    } else {
+        let (x, y, desc) = resolve_live_element(
+            device,
+            target_text.as_deref(),
+            element_type.as_deref(),
+            index,
+        )?;
+        (x, y, desc)
+    };
 
     // Tap to focus the element
     if no_retry {
@@ -339,14 +412,12 @@ fn handle_fill(
     } else {
         idb::tap_with_retry(device, point_x, point_y, config)?;
     }
-    info!("Fill: tapped ref [{}] to focus at ({:.1}, {:.1})", ref_id, point_x, point_y);
+    info!("Fill: tapped {} to focus at ({:.1}, {:.1})", target_desc, point_x, point_y);
 
     // Clear existing text if requested (select all via triple-tap, then delete)
     if clear {
-        // Triple-tap to select all text
         idb::tap(device, point_x, point_y)?;
         idb::tap(device, point_x, point_y)?;
-        // Send delete key to clear selected text
         idb::send_key(device, "DELETE")?;
         info!("Fill: cleared existing text");
     }
@@ -354,10 +425,10 @@ fn handle_fill(
     // Input the text
     idb::text_input(device, text)?;
 
-    info!("Fill success: ref [{}], text \"{}\"", ref_id, text);
+    info!("Fill success: {}, text \"{}\"", target_desc, text);
     println!(
-        "Filled ref [{}] with \"{}\" on {}{}",
-        ref_id,
+        "Filled {} with \"{}\" on {}{}",
+        target_desc,
         text,
         device,
         if clear { " (cleared first)" } else { "" }

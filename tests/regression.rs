@@ -88,6 +88,9 @@ fn test_tap_with_all_options() {
             x,
             y,
             ref_id,
+            text,
+            element_type,
+            index,
             scale,
             no_retry,
             observe,
@@ -96,6 +99,9 @@ fn test_tap_with_all_options() {
             assert_eq!(x, Some(300));
             assert_eq!(y, Some(600));
             assert!(ref_id.is_none());
+            assert!(text.is_none());
+            assert!(element_type.is_none());
+            assert!(index.is_none());
             assert_eq!(scale, Some(2));
             assert!(no_retry);
             assert_eq!(observe, era::capture::ObservationPolicy::Always);
@@ -473,13 +479,17 @@ fn test_fill_minimal() {
         Commands::Fill {
             device,
             ref_id,
+            target_text,
+            element_type,
             text,
             clear,
             no_retry,
             ..
         } => {
             assert_eq!(device, "UDID");
-            assert_eq!(ref_id, 5);
+            assert_eq!(ref_id, Some(5));
+            assert!(target_text.is_none());
+            assert!(element_type.is_none());
             assert_eq!(text, "hello");
             assert!(!clear);
             assert!(!no_retry);
@@ -501,7 +511,8 @@ fn test_fill_with_clear() {
 }
 
 #[test]
-fn test_fill_missing_ref_fails() {
+fn test_fill_missing_selector_fails() {
+    // No --ref, --target, or --type
     let result = parse(&["era", "fill", "-d", "UDID", "text"]);
     assert!(result.is_err());
 }
@@ -509,6 +520,151 @@ fn test_fill_missing_ref_fails() {
 #[test]
 fn test_fill_missing_text_fails() {
     let result = parse(&["era", "fill", "-d", "UDID", "--ref", "5"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_fill_with_target_text() {
+    let cli = parse(&["era", "fill", "-d", "UDID", "--target", "メールアドレス", "test@example.com"]).unwrap();
+    match cli.command {
+        Commands::Fill {
+            ref_id,
+            target_text,
+            element_type,
+            text,
+            ..
+        } => {
+            assert!(ref_id.is_none());
+            assert_eq!(target_text, Some("メールアドレス".to_string()));
+            assert!(element_type.is_none());
+            assert_eq!(text, "test@example.com");
+        }
+        _ => panic!("Expected Fill command"),
+    }
+}
+
+#[test]
+fn test_fill_with_type() {
+    let cli = parse(&["era", "fill", "-d", "UDID", "--type", "TextField", "--index", "1", "hello"]).unwrap();
+    match cli.command {
+        Commands::Fill {
+            ref_id,
+            target_text,
+            element_type,
+            index,
+            text,
+            ..
+        } => {
+            assert!(ref_id.is_none());
+            assert!(target_text.is_none());
+            assert_eq!(element_type, Some("TextField".to_string()));
+            assert_eq!(index, Some(1));
+            assert_eq!(text, "hello");
+        }
+        _ => panic!("Expected Fill command"),
+    }
+}
+
+#[test]
+fn test_fill_ref_conflicts_with_target() {
+    let result = parse(&["era", "fill", "-d", "UDID", "--ref", "5", "--target", "label", "text"]);
+    assert!(result.is_err());
+}
+
+// -------------------------------------------------------------------
+// tap --text / --type semantic selectors
+// -------------------------------------------------------------------
+
+#[test]
+fn test_tap_with_text() {
+    let cli = parse(&["era", "tap", "-d", "UDID", "--text", "カートに入れる"]).unwrap();
+    match cli.command {
+        Commands::Tap {
+            text,
+            element_type,
+            ref_id,
+            x,
+            y,
+            ..
+        } => {
+            assert_eq!(text, Some("カートに入れる".to_string()));
+            assert!(element_type.is_none());
+            assert!(ref_id.is_none());
+            assert!(x.is_none());
+            assert!(y.is_none());
+        }
+        _ => panic!("Expected Tap command"),
+    }
+}
+
+#[test]
+fn test_tap_with_type_and_index() {
+    let cli = parse(&["era", "tap", "-d", "UDID", "--type", "Button", "--index", "2"]).unwrap();
+    match cli.command {
+        Commands::Tap {
+            element_type,
+            index,
+            text,
+            ref_id,
+            x,
+            y,
+            ..
+        } => {
+            assert_eq!(element_type, Some("Button".to_string()));
+            assert_eq!(index, Some(2));
+            assert!(text.is_none());
+            assert!(ref_id.is_none());
+            assert!(x.is_none());
+            assert!(y.is_none());
+        }
+        _ => panic!("Expected Tap command"),
+    }
+}
+
+#[test]
+fn test_tap_type_without_index_defaults_none() {
+    let cli = parse(&["era", "tap", "-d", "UDID", "--type", "Cell"]).unwrap();
+    match cli.command {
+        Commands::Tap {
+            element_type,
+            index,
+            ..
+        } => {
+            assert_eq!(element_type, Some("Cell".to_string()));
+            assert!(index.is_none());
+        }
+        _ => panic!("Expected Tap command"),
+    }
+}
+
+#[test]
+fn test_tap_text_conflicts_with_coordinates() {
+    let result = parse(&["era", "tap", "-d", "UDID", "--text", "foo", "-x", "100", "-y", "200"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_text_conflicts_with_ref() {
+    let result = parse(&["era", "tap", "-d", "UDID", "--text", "foo", "--ref", "5"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_text_conflicts_with_type() {
+    let result = parse(&["era", "tap", "-d", "UDID", "--text", "foo", "--type", "Button"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_type_conflicts_with_ref() {
+    let result = parse(&["era", "tap", "-d", "UDID", "--type", "Button", "--ref", "5"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_index_requires_type() {
+    // --index without --type (and no other selector) should fail
+    let result = parse(&["era", "tap", "-d", "UDID", "--index", "2"]);
     assert!(result.is_err());
 }
 

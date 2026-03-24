@@ -126,56 +126,83 @@ pub enum Commands {
 
     /// Tap on the simulator screen (requires IDB)
     ///
-    /// Coordinates are in logical points by default.
-    /// Use --scale to convert pixel coordinates from screenshots.
-    /// Use --ref to tap an element from the latest snapshot.
-    /// Example: --scale 3 for iPhone Pro models (3x Retina)
+    /// Target selection (mutually exclusive):
+    ///   -x/-y: Coordinate-based (with optional --scale)
+    ///   --ref: By ref number from `era snapshot`
+    ///   --text: By accessibility label (live search, case-insensitive partial match)
+    ///   --type: By element type (with optional --index, 0-based)
     Tap {
         /// Simulator device ID or name
         #[arg(short, long, required = true)]
         device: String,
 
         /// X coordinate (pixels if --scale is set, otherwise logical points)
-        #[arg(short = 'x', long, required_unless_present = "ref_id", conflicts_with = "ref_id")]
+        #[arg(short = 'x', long, required_unless_present_any = ["ref_id", "text", "element_type"], conflicts_with_all = ["ref_id", "text", "element_type"])]
         x: Option<u32>,
 
         /// Y coordinate (pixels if --scale is set, otherwise logical points)
-        #[arg(short = 'y', long, required_unless_present = "ref_id", conflicts_with = "ref_id")]
+        #[arg(short = 'y', long, required_unless_present_any = ["ref_id", "text", "element_type"], conflicts_with_all = ["ref_id", "text", "element_type"])]
         y: Option<u32>,
 
         /// Ref number from `era snapshot` output. Taps the center of the referenced element.
-        #[arg(long = "ref", conflicts_with_all = ["x", "y", "scale"])]
+        #[arg(long = "ref", conflicts_with_all = ["x", "y", "scale", "text", "element_type", "index"])]
         ref_id: Option<u32>,
 
+        /// Tap element matching this text (case-insensitive partial match on AXLabel/AXValue).
+        /// Performs a live UI tree search.
+        #[arg(long, conflicts_with_all = ["x", "y", "scale", "ref_id", "element_type", "index"])]
+        text: Option<String>,
+
+        /// Tap element matching this type (e.g. "Button", "Cell", "TextField").
+        /// Use with --index to select among multiple matches.
+        #[arg(long = "type", conflicts_with_all = ["x", "y", "scale", "ref_id", "text"])]
+        element_type: Option<String>,
+
+        /// 0-based index when multiple elements match --type (default: 0)
+        #[arg(long, requires = "element_type")]
+        index: Option<u32>,
+
         /// Scale factor to convert pixel coordinates to logical points.
-        /// Use 2 for 2x Retina (iPhone SE), 3 for 3x Retina (iPhone Pro).
-        /// When set, x and y are treated as pixel coordinates from screenshots.
-        #[arg(short, long)]
+        /// Only used with -x/-y coordinate mode.
+        #[arg(short, long, requires = "x")]
         scale: Option<u32>,
 
         /// Disable automatic retry with UI state verification.
-        /// When set, performs a single tap without checking if the UI changed.
         #[arg(long)]
         no_retry: bool,
 
         /// Screenshot observation policy for retry diagnostics.
-        /// Requires --debug-capture to save screenshots to disk.
         #[arg(long, value_enum, default_value = "on-failure")]
         observe: ObservationPolicy,
     },
 
-    /// Fill text into a UI element by ref number (requires IDB)
+    /// Fill text into a UI element (requires IDB)
     ///
-    /// Taps the referenced element to focus it, then inputs the specified text.
-    /// Use `era snapshot` first to get ref numbers.
+    /// Taps the target element to focus it, then inputs the specified text.
+    /// Target selection (mutually exclusive):
+    ///   --ref: By ref number from `era snapshot`
+    ///   --text: By accessibility label (live search)
+    ///   --type: By element type (with optional --index)
     Fill {
         /// Simulator device ID or name
         #[arg(short, long, required = true)]
         device: String,
 
         /// Ref number from `era snapshot` output
-        #[arg(long = "ref", required = true)]
-        ref_id: u32,
+        #[arg(long = "ref", conflicts_with_all = ["target_text", "element_type", "index"], required_unless_present_any = ["target_text", "element_type"])]
+        ref_id: Option<u32>,
+
+        /// Find element by text (case-insensitive partial match on AXLabel/AXValue)
+        #[arg(long = "target", conflicts_with_all = ["ref_id", "element_type", "index"])]
+        target_text: Option<String>,
+
+        /// Find element by type (e.g. "TextField", "SecureTextField")
+        #[arg(long = "type", conflicts_with_all = ["ref_id", "target_text"])]
+        element_type: Option<String>,
+
+        /// 0-based index when multiple elements match --type (default: 0)
+        #[arg(long, requires = "element_type")]
+        index: Option<u32>,
 
         /// Text to input
         #[arg(required = true)]
