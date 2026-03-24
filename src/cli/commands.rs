@@ -102,10 +102,33 @@ pub enum Commands {
         url: String,
     },
 
+    /// Show a ref-numbered UI element tree (requires IDB)
+    ///
+    /// Outputs a compact, Playwright-style snapshot of the current screen.
+    /// Each element gets a [ref] number that can be used with `tap --ref` or `fill --ref`.
+    Snapshot {
+        /// Simulator device ID or name
+        #[arg(short, long, required = true)]
+        device: String,
+
+        /// Include frame coordinates in output
+        #[arg(long = "show-frames")]
+        show_frames: bool,
+
+        /// Only show interactive (tappable/fillable) elements
+        #[arg(long)]
+        interactive: bool,
+
+        /// Filter by element type (e.g. "Button", "TextField")
+        #[arg(long)]
+        filter: Option<String>,
+    },
+
     /// Tap on the simulator screen (requires IDB)
     ///
     /// Coordinates are in logical points by default.
     /// Use --scale to convert pixel coordinates from screenshots.
+    /// Use --ref to tap an element from the latest snapshot.
     /// Example: --scale 3 for iPhone Pro models (3x Retina)
     Tap {
         /// Simulator device ID or name
@@ -113,12 +136,16 @@ pub enum Commands {
         device: String,
 
         /// X coordinate (pixels if --scale is set, otherwise logical points)
-        #[arg(short = 'x', long, required = true)]
-        x: u32,
+        #[arg(short = 'x', long, required_unless_present = "ref_id", conflicts_with = "ref_id")]
+        x: Option<u32>,
 
         /// Y coordinate (pixels if --scale is set, otherwise logical points)
-        #[arg(short = 'y', long, required = true)]
-        y: u32,
+        #[arg(short = 'y', long, required_unless_present = "ref_id", conflicts_with = "ref_id")]
+        y: Option<u32>,
+
+        /// Ref number from `era snapshot` output. Taps the center of the referenced element.
+        #[arg(long = "ref", conflicts_with_all = ["x", "y", "scale"])]
+        ref_id: Option<u32>,
 
         /// Scale factor to convert pixel coordinates to logical points.
         /// Use 2 for 2x Retina (iPhone SE), 3 for 3x Retina (iPhone Pro).
@@ -133,6 +160,36 @@ pub enum Commands {
 
         /// Screenshot observation policy for retry diagnostics.
         /// Requires --debug-capture to save screenshots to disk.
+        #[arg(long, value_enum, default_value = "on-failure")]
+        observe: ObservationPolicy,
+    },
+
+    /// Fill text into a UI element by ref number (requires IDB)
+    ///
+    /// Taps the referenced element to focus it, then inputs the specified text.
+    /// Use `era snapshot` first to get ref numbers.
+    Fill {
+        /// Simulator device ID or name
+        #[arg(short, long, required = true)]
+        device: String,
+
+        /// Ref number from `era snapshot` output
+        #[arg(long = "ref", required = true)]
+        ref_id: u32,
+
+        /// Text to input
+        #[arg(required = true)]
+        text: String,
+
+        /// Clear existing text before input (triple-tap to select all, then replace)
+        #[arg(long)]
+        clear: bool,
+
+        /// Disable automatic retry for the initial tap.
+        #[arg(long)]
+        no_retry: bool,
+
+        /// Screenshot observation policy for retry diagnostics.
         #[arg(long, value_enum, default_value = "on-failure")]
         observe: ObservationPolicy,
     },

@@ -20,13 +20,15 @@ fn test_tap_minimal_args() {
             device,
             x,
             y,
+            ref_id,
             scale,
             no_retry,
             ..
         } => {
             assert_eq!(device, "UDID");
-            assert_eq!(x, 100);
-            assert_eq!(y, 200);
+            assert_eq!(x, Some(100));
+            assert_eq!(y, Some(200));
+            assert!(ref_id.is_none());
             assert!(scale.is_none());
             assert!(!no_retry);
         }
@@ -85,13 +87,15 @@ fn test_tap_with_all_options() {
             device,
             x,
             y,
+            ref_id,
             scale,
             no_retry,
             observe,
         } => {
             assert_eq!(device, "DEVICE-UUID");
-            assert_eq!(x, 300);
-            assert_eq!(y, 600);
+            assert_eq!(x, Some(300));
+            assert_eq!(y, Some(600));
+            assert!(ref_id.is_none());
             assert_eq!(scale, Some(2));
             assert!(no_retry);
             assert_eq!(observe, era::capture::ObservationPolicy::Always);
@@ -107,8 +111,50 @@ fn test_tap_missing_device_fails() {
 }
 
 #[test]
-fn test_tap_missing_coordinates_fails() {
+fn test_tap_missing_y_coordinate_fails() {
+    // Only -x without -y (and no --ref) should fail
     let result = parse(&["era", "tap", "-d", "UDID", "-x", "100"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_no_coordinates_no_ref_fails() {
+    // Neither coordinates nor --ref should fail
+    let result = parse(&["era", "tap", "-d", "UDID"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_ref_only() {
+    let cli = parse(&["era", "tap", "-d", "UDID", "--ref", "42"]).unwrap();
+    match cli.command {
+        Commands::Tap {
+            device,
+            x,
+            y,
+            ref_id,
+            scale,
+            ..
+        } => {
+            assert_eq!(device, "UDID");
+            assert!(x.is_none());
+            assert!(y.is_none());
+            assert_eq!(ref_id, Some(42));
+            assert!(scale.is_none());
+        }
+        _ => panic!("Expected Tap command"),
+    }
+}
+
+#[test]
+fn test_tap_ref_conflicts_with_coordinates() {
+    let result = parse(&["era", "tap", "-d", "UDID", "--ref", "42", "-x", "100", "-y", "200"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_ref_conflicts_with_scale() {
+    let result = parse(&["era", "tap", "-d", "UDID", "--ref", "42", "--scale", "3"]);
     assert!(result.is_err());
 }
 
@@ -365,6 +411,110 @@ fn test_shutdown_all() {
         _ => panic!("Expected Shutdown command"),
     }
 }
+
+// -------------------------------------------------------------------
+// snapshot command — argument parsing
+// -------------------------------------------------------------------
+
+#[test]
+fn test_snapshot_minimal() {
+    let cli = parse(&["era", "snapshot", "-d", "UDID"]).unwrap();
+    match cli.command {
+        Commands::Snapshot {
+            device,
+            show_frames,
+            interactive,
+            filter,
+        } => {
+            assert_eq!(device, "UDID");
+            assert!(!show_frames);
+            assert!(!interactive);
+            assert!(filter.is_none());
+        }
+        _ => panic!("Expected Snapshot command"),
+    }
+}
+
+#[test]
+fn test_snapshot_with_options() {
+    let cli = parse(&[
+        "era", "snapshot", "-d", "UDID", "--show-frames", "--interactive", "--filter", "Button",
+    ])
+    .unwrap();
+    match cli.command {
+        Commands::Snapshot {
+            show_frames,
+            interactive,
+            filter,
+            ..
+        } => {
+            assert!(show_frames);
+            assert!(interactive);
+            assert_eq!(filter, Some("Button".to_string()));
+        }
+        _ => panic!("Expected Snapshot command"),
+    }
+}
+
+#[test]
+fn test_snapshot_missing_device_fails() {
+    let result = parse(&["era", "snapshot"]);
+    assert!(result.is_err());
+}
+
+// -------------------------------------------------------------------
+// fill command — argument parsing
+// -------------------------------------------------------------------
+
+#[test]
+fn test_fill_minimal() {
+    let cli = parse(&["era", "fill", "-d", "UDID", "--ref", "5", "hello"]).unwrap();
+    match cli.command {
+        Commands::Fill {
+            device,
+            ref_id,
+            text,
+            clear,
+            no_retry,
+            ..
+        } => {
+            assert_eq!(device, "UDID");
+            assert_eq!(ref_id, 5);
+            assert_eq!(text, "hello");
+            assert!(!clear);
+            assert!(!no_retry);
+        }
+        _ => panic!("Expected Fill command"),
+    }
+}
+
+#[test]
+fn test_fill_with_clear() {
+    let cli = parse(&["era", "fill", "-d", "UDID", "--ref", "3", "--clear", "new text"]).unwrap();
+    match cli.command {
+        Commands::Fill { clear, text, .. } => {
+            assert!(clear);
+            assert_eq!(text, "new text");
+        }
+        _ => panic!("Expected Fill command"),
+    }
+}
+
+#[test]
+fn test_fill_missing_ref_fails() {
+    let result = parse(&["era", "fill", "-d", "UDID", "text"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_fill_missing_text_fails() {
+    let result = parse(&["era", "fill", "-d", "UDID", "--ref", "5"]);
+    assert!(result.is_err());
+}
+
+// -------------------------------------------------------------------
+// Other commands — basic parse validation
+// -------------------------------------------------------------------
 
 #[test]
 fn test_unknown_command_fails() {
