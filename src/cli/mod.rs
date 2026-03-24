@@ -94,6 +94,16 @@ pub fn run() {
             scale,
         } => handle_swipe(&device, start_x, start_y, end_x, end_y, scale),
         Commands::Enumerate { device } => handle_enumerate(&device),
+        Commands::Text { device, text } => handle_text(&device, &text),
+        Commands::Describe { device } => handle_describe(&device),
+        Commands::Longpress {
+            device,
+            x,
+            y,
+            duration,
+            scale,
+        } => handle_longpress(&device, x, y, duration, scale),
+        Commands::Key { device, key } => handle_key(&device, &key),
     };
 
     if let Err(e) = result {
@@ -360,5 +370,62 @@ fn handle_swipe(
 fn handle_enumerate(device: &str) -> Result<(), Box<dyn std::error::Error>> {
     let output = operations::enumerate_devices(device)?;
     println!("{}", output);
+    Ok(())
+}
+
+fn handle_text(device: &str, text: &str) -> Result<(), Box<dyn std::error::Error>> {
+    idb::text_input(device, text)?;
+    println!("Input text to {}: \"{}\"", device, text);
+    Ok(())
+}
+
+fn handle_describe(device: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let output = idb::describe_all(device)?;
+    println!("{}", output);
+    Ok(())
+}
+
+fn handle_longpress(
+    device: &str,
+    x: u32,
+    y: u32,
+    duration: f64,
+    scale: Option<u32>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let effective_scale = resolve_scale(device, scale);
+
+    let (point_x, point_y) = if let Some(scale_factor) = effective_scale {
+        let px = f64::from(x) / f64::from(scale_factor);
+        let py = f64::from(y) / f64::from(scale_factor);
+        debug!(
+            "Longpress: pixel ({}, {}), scale {}x -> point ({:.1}, {:.1}), device {}",
+            x, y, scale_factor, px, py, device
+        );
+        (px, py)
+    } else {
+        debug!("Longpress: point ({}, {}), device {}", x, y, device);
+        (f64::from(x), f64::from(y))
+    };
+
+    idb::long_press(device, point_x, point_y, duration)?;
+
+    if let Some(scale_factor) = effective_scale {
+        println!(
+            "Long pressed at pixel ({}, {}) -> point ({:.1}, {:.1}) on {} for {:.1}s (scale: {}x{})",
+            x, y, point_x, point_y, device, duration, scale_factor,
+            if scale.is_none() { " auto-detected" } else { "" }
+        );
+    } else {
+        println!(
+            "Long pressed at point ({}, {}) on {} for {:.1}s",
+            x, y, device, duration
+        );
+    }
+    Ok(())
+}
+
+fn handle_key(device: &str, key: &str) -> Result<(), Box<dyn std::error::Error>> {
+    idb::send_key(device, key)?;
+    println!("Sent key '{}' to {}", key, device);
     Ok(())
 }

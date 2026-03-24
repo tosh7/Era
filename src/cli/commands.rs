@@ -220,6 +220,73 @@ pub enum Commands {
         #[arg(short, long, required = true)]
         device: String,
     },
+
+    /// Input text into the currently focused text field (requires IDB)
+    ///
+    /// Sends the specified text string to the simulator as if typed on a keyboard.
+    /// A text field must be focused before running this command.
+    Text {
+        /// Simulator device ID or name
+        #[arg(short, long, required = true)]
+        device: String,
+
+        /// Text string to input
+        #[arg(required = true)]
+        text: String,
+    },
+
+    /// Retrieve the UI element tree from the simulator (requires IDB)
+    ///
+    /// Returns the full accessibility tree as JSON via `idb ui describe-all`.
+    /// Useful for inspecting UI state and finding element coordinates.
+    Describe {
+        /// Simulator device ID or name
+        #[arg(short, long, required = true)]
+        device: String,
+    },
+
+    /// Long press on the simulator screen (requires IDB)
+    ///
+    /// Performs a tap-and-hold gesture at the specified coordinates.
+    /// Coordinates are in logical points by default.
+    /// Use --scale to convert pixel coordinates from screenshots.
+    Longpress {
+        /// Simulator device ID or name
+        #[arg(short, long, required = true)]
+        device: String,
+
+        /// X coordinate (pixels if --scale is set, otherwise logical points)
+        #[arg(short = 'x', long, required = true)]
+        x: u32,
+
+        /// Y coordinate (pixels if --scale is set, otherwise logical points)
+        #[arg(short = 'y', long, required = true)]
+        y: u32,
+
+        /// Press duration in seconds
+        #[arg(long, default_value = "1.0")]
+        duration: f64,
+
+        /// Scale factor to convert pixel coordinates to logical points.
+        /// Use 2 for 2x Retina (iPhone SE), 3 for 3x Retina (iPhone Pro).
+        /// When set, x and y are treated as pixel coordinates from screenshots.
+        #[arg(short, long)]
+        scale: Option<u32>,
+    },
+
+    /// Send a raw key event to the simulator (requires IDB)
+    ///
+    /// Sends a key code or key name via `idb ui key`.
+    /// For hardware buttons (HOME, LOCK), use the `input` command instead.
+    Key {
+        /// Simulator device ID or name
+        #[arg(short, long, required = true)]
+        device: String,
+
+        /// Key code (integer) or key name to send
+        #[arg(required = true)]
+        key: String,
+    },
 }
 
 /// Keyboard key types for input command
