@@ -256,6 +256,130 @@ pub fn resolve_ref(udid: &str, ref_id: u32) -> Result<(f64, f64), String> {
     }
 }
 
+// -------------------------------------------------------------------
+// Semantic selectors - live UI tree search
+// -------------------------------------------------------------------
+
+/// Find an element by label text (case-insensitive partial match) and return its center.
+///
+/// Searches the live UI tree from `idb describe-all`.
+/// If multiple elements match, returns the first enabled one.
+pub fn find_by_text(elements: &[UiElement], text: &str) -> Result<(f64, f64, String), String> {
+    let mut matches = Vec::new();
+    for root in elements {
+        collect_by_text(root, text, &mut matches);
+    }
+
+    if matches.is_empty() {
+        return Err(format!(
+            "No element found with text \"{}\". Run `era snapshot` to see available elements.",
+            text
+        ));
+    }
+
+    // Prefer enabled elements
+    let best = matches
+        .iter()
+        .find(|e| e.enabled)
+        .unwrap_or(&matches[0]);
+
+    let (cx, cy) = best.frame.center();
+    let label = best
+        .label
+        .as_ref()
+        .or(best.value.as_ref())
+        .cloned()
+        .unwrap_or_default();
+
+    eprintln!(
+        "[era] Found \"{}\" -> {} \"{}\" at ({:.1}, {:.1})",
+        text, best.element_type, label, cx, cy
+    );
+
+    Ok((cx, cy, format!("{} \"{}\"", best.element_type, label)))
+}
+
+fn collect_by_text<'a>(element: &'a UiElement, text: &str, results: &mut Vec<&'a UiElement>) {
+    let lower_text = text.to_lowercase();
+    let label_match = element
+        .label
+        .as_ref()
+        .map(|l| l.to_lowercase().contains(&lower_text))
+        .unwrap_or(false);
+    let value_match = element
+        .value
+        .as_ref()
+        .map(|v| v.to_lowercase().contains(&lower_text))
+        .unwrap_or(false);
+
+    if label_match || value_match {
+        results.push(element);
+    }
+    for child in &element.children {
+        collect_by_text(child, text, results);
+    }
+}
+
+/// Find an element by type (exact match) and optional index, return its center.
+///
+/// Index is 0-based. If index is None, returns the first match.
+pub fn find_by_type_index(
+    elements: &[UiElement],
+    element_type: &str,
+    index: Option<u32>,
+) -> Result<(f64, f64, String), String> {
+    let mut matches = Vec::new();
+    for root in elements {
+        collect_by_type(root, element_type, &mut matches);
+    }
+
+    if matches.is_empty() {
+        return Err(format!(
+            "No element found with type \"{}\". Run `era snapshot` to see available elements.",
+            element_type
+        ));
+    }
+
+    let idx = index.unwrap_or(0) as usize;
+    if idx >= matches.len() {
+        return Err(format!(
+            "Type \"{}\" has {} elements, but index {} was requested (0-based).",
+            element_type,
+            matches.len(),
+            idx
+        ));
+    }
+
+    let target = matches[idx];
+    let (cx, cy) = target.frame.center();
+    let label = target
+        .label
+        .as_ref()
+        .or(target.value.as_ref())
+        .cloned()
+        .unwrap_or_default();
+
+    eprintln!(
+        "[era] Found type \"{}\"[{}] -> \"{}\" at ({:.1}, {:.1}) ({} total matches)",
+        element_type, idx, label, cx, cy, matches.len()
+    );
+
+    Ok((cx, cy, format!("{} \"{}\"", target.element_type, label)))
+}
+
+fn collect_by_type<'a>(
+    element: &'a UiElement,
+    element_type: &str,
+    results: &mut Vec<&'a UiElement>,
+) {
+    if element.element_type == element_type {
+        results.push(element);
+    }
+    for child in &element.children {
+        collect_by_type(child, element_type, results);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -527,5 +651,106 @@ mod tests {
         let (output, _) = build_snapshot(&elements, &options);
 
         assert!(output.contains("\"入力済みテキスト\""));
+    }
+
+    // -------------------------------------------------------------------
+    // find_by_text
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn test_find_by_text_exact() {
+        let elements = sample_elements();
+        let (cx, cy, desc) = find_by_text(&elements, "ログイン").unwrap();
+        assert_eq!(cx, 196.5); // (100 + 193/2)
+        assert_eq!(cy, 422.0); // (400 + 44/2)
+        assert!(desc.contains("Button"));
+    }
+
+    #[test]
+    fn test_find_by_text_partial_case_insensitive() {
+        let elements = sample_elements();
+        let (_, _, desc) = find_by_text(&elements, "welcome").unwrap();
+        assert!(desc.contains("StaticText"));
+    }
+
+    #[test]
+    fn test_find_by_text_prefers_enabled() {
+        // "Welcome" is disabled; if we search for "メール" we should get the enabled TextField
+        let elements = sample_elements();
+        let (_, _, desc) = find_by_text(&elements, "メール").unwrap();
+        assert!(desc.contains("TextField"));
+    }
+
+    #[test]
+    fn test_find_by_text_not_found() {
+        let elements = sample_elements();
+        let result = find_by_text(&elements, "存在しない要素");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("No element found"));
+    }
+
+    #[test]
+    fn test_find_by_text_value_match() {
+        let elements = vec![UiElement {
+            element_type: "TextField".to_string(),
+            label: None,
+            value: Some("入力テキスト".to_string()),
+            frame: Frame {
+                x: 10.0,
+                y: 20.0,
+                width: 200.0,
+                height: 44.0,
+            },
+            enabled: true,
+            traits: vec![],
+            children: vec![],
+        }];
+        let (cx, cy, _) = find_by_text(&elements, "入力").unwrap();
+        assert_eq!(cx, 110.0); // 10 + 200/2
+        assert_eq!(cy, 42.0); // 20 + 44/2
+    }
+
+    // -------------------------------------------------------------------
+    // find_by_type_index
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn test_find_by_type_first() {
+        let elements = sample_elements();
+        let (cx, cy, desc) = find_by_type_index(&elements, "Button", None).unwrap();
+        assert_eq!(cx, 196.5);
+        assert_eq!(cy, 422.0);
+        assert!(desc.contains("ログイン"));
+    }
+
+    #[test]
+    fn test_find_by_type_with_index() {
+        let elements = sample_elements();
+        // TextField is the only one, index 0
+        let (_, _, desc) = find_by_type_index(&elements, "TextField", Some(0)).unwrap();
+        assert!(desc.contains("メールアドレス"));
+    }
+
+    #[test]
+    fn test_find_by_type_index_out_of_range() {
+        let elements = sample_elements();
+        let result = find_by_type_index(&elements, "Button", Some(5));
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("has 1 elements"));
+    }
+
+    #[test]
+    fn test_find_by_type_not_found() {
+        let elements = sample_elements();
+        let result = find_by_type_index(&elements, "Switch", None);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("No element found"));
+    }
+
+    #[test]
+    fn test_find_by_type_window() {
+        let elements = sample_elements();
+        let (_, _, desc) = find_by_type_index(&elements, "Window", None).unwrap();
+        assert!(desc.contains("MainWindow"));
     }
 }

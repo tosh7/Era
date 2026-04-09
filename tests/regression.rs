@@ -25,7 +25,7 @@ fn test_tap_minimal_args() {
             no_retry,
             ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert_eq!(x, Some(100));
             assert_eq!(y, Some(200));
             assert!(ref_id.is_none());
@@ -88,14 +88,21 @@ fn test_tap_with_all_options() {
             x,
             y,
             ref_id,
+            text,
+            element_type,
+            index,
             scale,
             no_retry,
             observe,
+            ..
         } => {
-            assert_eq!(device, "DEVICE-UUID");
+            assert_eq!(device, Some("DEVICE-UUID".to_string()));
             assert_eq!(x, Some(300));
             assert_eq!(y, Some(600));
             assert!(ref_id.is_none());
+            assert!(text.is_none());
+            assert!(element_type.is_none());
+            assert!(index.is_none());
             assert_eq!(scale, Some(2));
             assert!(no_retry);
             assert_eq!(observe, era::capture::ObservationPolicy::Always);
@@ -105,8 +112,9 @@ fn test_tap_with_all_options() {
 }
 
 #[test]
-fn test_tap_missing_device_fails() {
-    let result = parse(&["era", "tap", "-x", "100", "-y", "200"]);
+fn test_tap_missing_coordinates_fails() {
+    // No -x -y and no --ref should fail
+    let result = parse(&["era", "tap", "-d", "UDID"]);
     assert!(result.is_err());
 }
 
@@ -136,7 +144,7 @@ fn test_tap_ref_only() {
             scale,
             ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert!(x.is_none());
             assert!(y.is_none());
             assert_eq!(ref_id, Some(42));
@@ -161,6 +169,32 @@ fn test_tap_ref_conflicts_with_scale() {
 #[test]
 fn test_tap_invalid_coordinate_type_fails() {
     let result = parse(&["era", "tap", "-d", "UDID", "-x", "abc", "-y", "200"]);
+    assert!(result.is_err());
+}
+
+// -------------------------------------------------------------------
+// tap with --session
+// -------------------------------------------------------------------
+
+#[test]
+fn test_tap_with_session() {
+    let cli = parse(&["era", "tap", "--session", "main", "-x", "100", "-y", "200"]).unwrap();
+    match cli.command {
+        Commands::Tap {
+            device, session, ..
+        } => {
+            assert!(device.is_none());
+            assert_eq!(session, Some("main".to_string()));
+        }
+        _ => panic!("Expected Tap command"),
+    }
+}
+
+#[test]
+fn test_tap_session_conflicts_with_device() {
+    let result = parse(&[
+        "era", "tap", "--session", "main", "-d", "UDID", "-x", "100", "-y", "200",
+    ]);
     assert!(result.is_err());
 }
 
@@ -193,8 +227,9 @@ fn test_swipe_minimal_args() {
             end_x,
             end_y,
             scale,
+            ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert_eq!(start_x, 100);
             assert_eq!(start_y, 200);
             assert_eq!(end_x, 100);
@@ -247,6 +282,34 @@ fn test_swipe_missing_end_coordinates_fails() {
     assert!(result.is_err());
 }
 
+#[test]
+fn test_swipe_with_session() {
+    let cli = parse(&[
+        "era",
+        "swipe",
+        "--session",
+        "main",
+        "--start-x",
+        "100",
+        "--start-y",
+        "200",
+        "--end-x",
+        "100",
+        "--end-y",
+        "600",
+    ])
+    .unwrap();
+    match cli.command {
+        Commands::Swipe {
+            device, session, ..
+        } => {
+            assert!(device.is_none());
+            assert_eq!(session, Some("main".to_string()));
+        }
+        _ => panic!("Expected Swipe command"),
+    }
+}
+
 // -------------------------------------------------------------------
 // tap-region command — argument parsing
 // -------------------------------------------------------------------
@@ -279,7 +342,7 @@ fn test_tap_region_minimal_args() {
             no_retry,
             ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert_eq!(x, 50);
             assert_eq!(y, 100);
             assert_eq!(width, 200);
@@ -425,8 +488,9 @@ fn test_snapshot_minimal() {
             show_frames,
             interactive,
             filter,
+            ..
         } => {
-            assert_eq!(device, "UDID");
+            assert_eq!(device, Some("UDID".to_string()));
             assert!(!show_frames);
             assert!(!interactive);
             assert!(filter.is_none());
@@ -457,8 +521,22 @@ fn test_snapshot_with_options() {
 }
 
 #[test]
-fn test_snapshot_missing_device_fails() {
-    let result = parse(&["era", "snapshot"]);
+fn test_snapshot_with_session() {
+    let cli = parse(&["era", "snapshot", "--session", "main"]).unwrap();
+    match cli.command {
+        Commands::Snapshot {
+            device, session, ..
+        } => {
+            assert!(device.is_none());
+            assert_eq!(session, Some("main".to_string()));
+        }
+        _ => panic!("Expected Snapshot command"),
+    }
+}
+
+#[test]
+fn test_snapshot_session_conflicts_with_device() {
+    let result = parse(&["era", "snapshot", "--session", "main", "-d", "UDID"]);
     assert!(result.is_err());
 }
 
@@ -473,13 +551,17 @@ fn test_fill_minimal() {
         Commands::Fill {
             device,
             ref_id,
+            target_text,
+            element_type,
             text,
             clear,
             no_retry,
             ..
         } => {
-            assert_eq!(device, "UDID");
-            assert_eq!(ref_id, 5);
+            assert_eq!(device, Some("UDID".to_string()));
+            assert_eq!(ref_id, Some(5));
+            assert!(target_text.is_none());
+            assert!(element_type.is_none());
             assert_eq!(text, "hello");
             assert!(!clear);
             assert!(!no_retry);
@@ -501,7 +583,8 @@ fn test_fill_with_clear() {
 }
 
 #[test]
-fn test_fill_missing_ref_fails() {
+fn test_fill_missing_selector_fails() {
+    // No --ref, --target, or --type
     let result = parse(&["era", "fill", "-d", "UDID", "text"]);
     assert!(result.is_err());
 }
@@ -510,6 +593,207 @@ fn test_fill_missing_ref_fails() {
 fn test_fill_missing_text_fails() {
     let result = parse(&["era", "fill", "-d", "UDID", "--ref", "5"]);
     assert!(result.is_err());
+}
+
+#[test]
+fn test_fill_with_target_text() {
+    let cli = parse(&["era", "fill", "-d", "UDID", "--target", "メールアドレス", "test@example.com"]).unwrap();
+    match cli.command {
+        Commands::Fill {
+            ref_id,
+            target_text,
+            element_type,
+            text,
+            ..
+        } => {
+            assert!(ref_id.is_none());
+            assert_eq!(target_text, Some("メールアドレス".to_string()));
+            assert!(element_type.is_none());
+            assert_eq!(text, "test@example.com");
+        }
+        _ => panic!("Expected Fill command"),
+    }
+}
+
+#[test]
+fn test_fill_with_type() {
+    let cli = parse(&["era", "fill", "-d", "UDID", "--type", "TextField", "--index", "1", "hello"]).unwrap();
+    match cli.command {
+        Commands::Fill {
+            ref_id,
+            target_text,
+            element_type,
+            index,
+            text,
+            ..
+        } => {
+            assert!(ref_id.is_none());
+            assert!(target_text.is_none());
+            assert_eq!(element_type, Some("TextField".to_string()));
+            assert_eq!(index, Some(1));
+            assert_eq!(text, "hello");
+        }
+        _ => panic!("Expected Fill command"),
+    }
+}
+
+#[test]
+fn test_fill_ref_conflicts_with_target() {
+    let result = parse(&["era", "fill", "-d", "UDID", "--ref", "5", "--target", "label", "text"]);
+    assert!(result.is_err());
+}
+
+// -------------------------------------------------------------------
+// tap --text / --type semantic selectors
+// -------------------------------------------------------------------
+
+#[test]
+fn test_tap_with_text() {
+    let cli = parse(&["era", "tap", "-d", "UDID", "--text", "カートに入れる"]).unwrap();
+    match cli.command {
+        Commands::Tap {
+            text,
+            element_type,
+            ref_id,
+            x,
+            y,
+            ..
+        } => {
+            assert_eq!(text, Some("カートに入れる".to_string()));
+            assert!(element_type.is_none());
+            assert!(ref_id.is_none());
+            assert!(x.is_none());
+            assert!(y.is_none());
+        }
+        _ => panic!("Expected Tap command"),
+    }
+}
+
+#[test]
+fn test_tap_with_type_and_index() {
+    let cli = parse(&["era", "tap", "-d", "UDID", "--type", "Button", "--index", "2"]).unwrap();
+    match cli.command {
+        Commands::Tap {
+            element_type,
+            index,
+            text,
+            ref_id,
+            x,
+            y,
+            ..
+        } => {
+            assert_eq!(element_type, Some("Button".to_string()));
+            assert_eq!(index, Some(2));
+            assert!(text.is_none());
+            assert!(ref_id.is_none());
+            assert!(x.is_none());
+            assert!(y.is_none());
+        }
+        _ => panic!("Expected Tap command"),
+    }
+}
+
+#[test]
+fn test_tap_type_without_index_defaults_none() {
+    let cli = parse(&["era", "tap", "-d", "UDID", "--type", "Cell"]).unwrap();
+    match cli.command {
+        Commands::Tap {
+            element_type,
+            index,
+            ..
+        } => {
+            assert_eq!(element_type, Some("Cell".to_string()));
+            assert!(index.is_none());
+        }
+        _ => panic!("Expected Tap command"),
+    }
+}
+
+#[test]
+fn test_tap_text_conflicts_with_coordinates() {
+    let result = parse(&["era", "tap", "-d", "UDID", "--text", "foo", "-x", "100", "-y", "200"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_text_conflicts_with_ref() {
+    let result = parse(&["era", "tap", "-d", "UDID", "--text", "foo", "--ref", "5"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_text_conflicts_with_type() {
+    let result = parse(&["era", "tap", "-d", "UDID", "--text", "foo", "--type", "Button"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_type_conflicts_with_ref() {
+    let result = parse(&["era", "tap", "-d", "UDID", "--type", "Button", "--ref", "5"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_tap_index_requires_type() {
+    // --index without --type (and no other selector) should fail
+    let result = parse(&["era", "tap", "-d", "UDID", "--index", "2"]);
+    assert!(result.is_err());
+}
+
+// -------------------------------------------------------------------
+// session command — argument parsing
+// -------------------------------------------------------------------
+
+#[test]
+fn test_session_connect() {
+    let cli = parse(&["era", "session", "connect", "--name", "main", "-d", "UDID"]).unwrap();
+    match cli.command {
+        Commands::Session(era::cli::commands::SessionCommand::Connect { name, device }) => {
+            assert_eq!(name, "main");
+            assert_eq!(device, "UDID");
+        }
+        _ => panic!("Expected Session Connect command"),
+    }
+}
+
+#[test]
+fn test_session_connect_default_name() {
+    let cli = parse(&["era", "session", "connect", "-d", "UDID"]).unwrap();
+    match cli.command {
+        Commands::Session(era::cli::commands::SessionCommand::Connect { name, .. }) => {
+            assert_eq!(name, "default");
+        }
+        _ => panic!("Expected Session Connect command"),
+    }
+}
+
+#[test]
+fn test_session_list() {
+    let cli = parse(&["era", "session", "list"]).unwrap();
+    assert!(matches!(
+        cli.command,
+        Commands::Session(era::cli::commands::SessionCommand::List)
+    ));
+}
+
+#[test]
+fn test_session_disconnect() {
+    let cli = parse(&["era", "session", "disconnect", "--name", "main"]).unwrap();
+    match cli.command {
+        Commands::Session(era::cli::commands::SessionCommand::Disconnect { name }) => {
+            assert_eq!(name, "main");
+        }
+        _ => panic!("Expected Session Disconnect command"),
+    }
+}
+
+#[test]
+fn test_session_disconnect_all() {
+    let cli = parse(&["era", "session", "disconnect-all"]).unwrap();
+    assert!(matches!(
+        cli.command,
+        Commands::Session(era::cli::commands::SessionCommand::DisconnectAll)
+    ));
 }
 
 // -------------------------------------------------------------------
