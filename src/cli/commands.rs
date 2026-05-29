@@ -344,6 +344,77 @@ pub enum Commands {
         #[arg(required = true)]
         key: String,
     },
+
+    /// Compare two images and report the differing pixel count (AE metric)
+    ///
+    /// Decodes both PNGs, optionally crops a region, and counts pixels that
+    /// differ beyond `--fuzz`. Useful for before/after visual regression.
+    /// Exit code: 0 = within threshold, 2 = exceeded.
+    Compare {
+        /// Baseline image (e.g. before.png)
+        #[arg(required = true)]
+        before: String,
+
+        /// Comparison image (e.g. after.png)
+        #[arg(required = true)]
+        after: String,
+
+        /// Region to compare as WxH+X+Y in pixels (compares the full image if omitted)
+        #[arg(long)]
+        region: Option<String>,
+
+        /// Write a diff image (changed pixels in red over a faded original)
+        #[arg(long)]
+        out: Option<String>,
+
+        /// Per-channel tolerance 0-255; pixels within tolerance are treated as equal
+        #[arg(long, default_value_t = 0)]
+        fuzz: u8,
+
+        /// Exit with code 2 if the differing pixel count exceeds this value
+        #[arg(long, default_value_t = 0)]
+        threshold: u64,
+    },
+
+    /// Combine images into a grid (side-by-side or stacked)
+    ///
+    /// Tiles are laid out left-to-right, top-to-bottom and centered in equal cells.
+    Montage {
+        /// Input image paths (two or more)
+        #[arg(required = true, num_args = 1..)]
+        inputs: Vec<String>,
+
+        /// Output image path
+        #[arg(short, long, required = true)]
+        out: String,
+
+        /// Grid layout as COLSxROWS (e.g. 2x1, 1x3); defaults to a single row
+        #[arg(long)]
+        tile: Option<String>,
+
+        /// Spacing in pixels between and around tiles
+        #[arg(long, default_value_t = 8)]
+        spacing: u32,
+
+        /// Background color as hex (rrggbb or rrggbbaa)
+        #[arg(long, default_value = "cccccc")]
+        background: String,
+    },
+
+    /// Crop a rectangular region out of an image (WxH+X+Y in pixels)
+    Crop {
+        /// Input image path
+        #[arg(required = true)]
+        input: String,
+
+        /// Region as WxH+X+Y in pixels
+        #[arg(required = true)]
+        region: String,
+
+        /// Output image path
+        #[arg(short, long, required = true)]
+        out: String,
+    },
 }
 
 /// Keyboard key types for input command

@@ -9,6 +9,7 @@ use commands::{Cli, Commands, KeyType};
 use log::{debug, info};
 
 use crate::capture::CaptureConfig;
+use crate::imaging;
 use crate::simulator::{idb, operations, snapshot, ui_tree};
 
 /// Initialize the logger based on verbosity level
@@ -122,6 +123,26 @@ pub fn run() {
             scale,
         } => handle_longpress(&device, x, y, duration, scale),
         Commands::Key { device, key } => handle_key(&device, &key),
+        Commands::Compare {
+            before,
+            after,
+            region,
+            out,
+            fuzz,
+            threshold,
+        } => handle_compare(&before, &after, region.as_deref(), out.as_deref(), fuzz, threshold),
+        Commands::Montage {
+            inputs,
+            out,
+            tile,
+            spacing,
+            background,
+        } => handle_montage(&inputs, &out, tile.as_deref(), spacing, &background),
+        Commands::Crop {
+            input,
+            region,
+            out,
+        } => handle_crop(&input, &region, &out),
     };
 
     if let Err(e) = result {
@@ -197,6 +218,52 @@ fn handle_screenshot(device: &str, output: &str) -> Result<(), Box<dyn std::erro
     let path = Path::new(output);
     operations::take_screenshot(device, path)?;
     println!("Screenshot saved to: {}", output);
+    Ok(())
+}
+
+fn handle_compare(
+    before: &str,
+    after: &str,
+    region: Option<&str>,
+    out: Option<&str>,
+    fuzz: u8,
+    threshold: u64,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let result = imaging::compare(before, after, region, out, fuzz)?;
+    let pct = if result.total > 0 {
+        result.diff as f64 / result.total as f64 * 100.0
+    } else {
+        0.0
+    };
+    println!(
+        "AE={} ({:.4}%) differing pixels of {}",
+        result.diff, pct, result.total
+    );
+    if let Some(path) = out {
+        println!("Diff image saved to: {}", path);
+    }
+    if result.diff > threshold {
+        eprintln!("Differences ({}) exceed threshold ({})", result.diff, threshold);
+        std::process::exit(2);
+    }
+    Ok(())
+}
+
+fn handle_montage(
+    inputs: &[String],
+    out: &str,
+    tile: Option<&str>,
+    spacing: u32,
+    background: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    imaging::montage(inputs, out, tile, spacing, background)?;
+    println!("Montage saved to: {}", out);
+    Ok(())
+}
+
+fn handle_crop(input: &str, region: &str, out: &str) -> Result<(), Box<dyn std::error::Error>> {
+    imaging::crop(input, region, out)?;
+    println!("Cropped image saved to: {}", out);
     Ok(())
 }
 

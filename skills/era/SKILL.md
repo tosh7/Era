@@ -123,6 +123,27 @@ era openurl -d booted -u "myapp://settings"
 era enumerate -d booted
 ```
 
+### Image / Visual Diff
+
+Image utilities for before/after visual regression (no ImageMagick needed):
+
+```bash
+# compare two images; prints AE = differing pixel count, exits 2 if > --threshold
+era compare before.png after.png
+
+# compare only a region (WxH+X+Y, pixels) and write a highlighted diff image
+era compare before.png after.png --region 1206x250+0+330 --out diff.png
+
+# allow minor anti-aliasing noise
+era compare before.png after.png --fuzz 2 --threshold 50
+
+# combine images into a grid (--tile 2x1 = side-by-side, 1x3 = stacked)
+era montage before.png after.png --tile 2x1 -o montage.png
+
+# crop a rectangular region
+era crop screenshot.png 1206x150+0+478 -o cropped.png
+```
+
 ## Coordinate Conversion
 
 The `--scale` option converts pixel coordinates to logical points automatically. Use this when working with coordinates from screenshots.
@@ -194,6 +215,32 @@ era openurl -d booted -u "myapp://product/12345"
 era screenshot -d booted deeplink-result.png
 era shutdown "iPhone 16 Pro"
 ```
+
+## Example: Before/After Visual Regression
+
+Verify a refactor renders identically by driving the same flow on two builds and
+comparing screenshots. Build once per version; capturing different states needs no
+rebuild — just operate the installed app:
+
+```bash
+# 1. install + capture the BEFORE build (drive a FIXED tap recipe, screenshot each step)
+era install -d booted /path/to/Before.app
+era launch  -d booted com.example.myapp
+era screenshot -d booted before_step1.png
+
+# 2. install + capture the AFTER build with the SAME recipe
+era install -d booted /path/to/After.app
+era launch  -d booted com.example.myapp
+era screenshot -d booted after_step1.png
+
+# 3. compare the component region (ignores status-bar clock / dynamic content) + montage
+era compare before_step1.png after_step1.png --region 1206x250+0+330 --out diff_step1.png
+era montage before_step1.png after_step1.png --tile 2x1 -o montage_step1.png
+```
+
+Keep the tap sequence identical for both runs (a fixed "recipe"); crop to the
+component with `--region` so unrelated areas don't add noise; `AE=0` means
+pixel-identical; use `--fuzz` to tolerate anti-aliasing.
 
 ## Requirements
 
